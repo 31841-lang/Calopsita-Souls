@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -173,6 +174,103 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
+      gap: 12px;
+    }
+
+    .hud-abilities-container {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      pointer-events: none;
+    }
+
+    .hud-abilities-label {
+      font-size: 7px;
+      color: #ffde59;
+      text-shadow: 1px 1px 0 #000;
+      letter-spacing: 0.5px;
+    }
+
+    .hud-abilities {
+      display: flex;
+      gap: 6px;
+    }
+
+    .ability-slot {
+      width: 44px;
+      height: 48px;
+      background: rgba(18, 14, 28, 0.9);
+      border: 2px solid #5a4230;
+      border-radius: 4px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      box-shadow: 2px 2px 0 #000;
+    }
+
+    .ability-slot.ready {
+      border-color: #ffde59;
+      box-shadow: 0 0 8px rgba(255, 222, 89, 0.4), 2px 2px 0 #000;
+    }
+
+    .ability-slot.cooling {
+      border-color: #64748b;
+      opacity: 0.85;
+    }
+
+    .ability-slot.empty {
+      border-color: #372f44;
+      background: rgba(14, 10, 20, 0.6);
+      opacity: 0.6;
+    }
+
+    .ability-key {
+      position: absolute;
+      top: 2px;
+      left: 3px;
+      font-size: 7px;
+      color: #ffde59;
+      font-weight: bold;
+      text-shadow: 1px 1px 0 #000;
+      z-index: 2;
+    }
+
+    .ability-icon {
+      font-size: 18px;
+      z-index: 1;
+      margin-top: 4px;
+    }
+
+    .ability-empty-dash {
+      font-size: 10px;
+      color: #554868;
+    }
+
+    .ability-cd-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 0%;
+      background: rgba(0, 0, 0, 0.7);
+      border-top: 2px solid #38bdf8;
+      transition: height 0.05s linear;
+      z-index: 2;
+    }
+
+    .ability-cd-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 8px;
+      color: #ffffff;
+      text-shadow: 1px 1px 0 #000, 0 0 4px #000;
+      font-weight: bold;
+      z-index: 3;
     }
 
     .upgrades-badges {
@@ -361,9 +459,19 @@
       text-transform: uppercase;
     }
 
-    .card-tag.comum { background: #3b82f6; }
-    .card-tag.raro { background: #a855f7; }
-    .card-tag.lendario { background: #eab308; color: #000; font-weight: bold; }
+    .card-tag.comum {
+      background: #3b82f6;
+    }
+
+    .card-tag.raro {
+      background: #a855f7;
+    }
+
+    .card-tag.lendario {
+      background: #eab308;
+      color: #000;
+      font-weight: bold;
+    }
 
     .card-title {
       font-size: 10px;
@@ -403,6 +511,366 @@
       text-align: left;
       line-height: 1.5;
       font-size: 7px;
+    }
+
+    /* Shop Modal Styles */
+    .shop-panel {
+      background: #191424;
+      border: 4px solid #5a4230;
+      box-shadow: 0 0 0 6px #2b1f15, 0 0 35px rgba(0, 0, 0, 0.95);
+      border-radius: 6px;
+      width: 900px;
+      max-width: 95vw;
+      height: 540px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      padding: 16px 20px;
+      text-align: left;
+      position: relative;
+    }
+
+    .shop-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 3px solid #3a2b1f;
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+    }
+
+    .shop-title {
+      font-size: 15px;
+      color: #ffde59;
+      text-shadow: 2px 2px 0 #8c4a00;
+      margin-bottom: 4px;
+      letter-spacing: 1px;
+    }
+
+    .shop-wave-tag {
+      font-size: 8px;
+      color: #94a3b8;
+    }
+
+    .shop-score-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #0f0c16;
+      border: 2px solid #ffcc00;
+      padding: 8px 14px;
+      border-radius: 4px;
+      box-shadow: 2px 2px 0 #000;
+    }
+
+    .shop-coin-icon {
+      font-size: 14px;
+    }
+
+    .shop-score-label {
+      font-size: 9px;
+      color: #cbd5e1;
+    }
+
+    .shop-score-value {
+      font-size: 13px;
+      color: #ffea79;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .shop-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .shop-tab-btn {
+      font-family: inherit;
+      font-size: 9px;
+      padding: 8px 16px;
+      background: #252033;
+      color: #94a3b8;
+      border: 2px solid #4a3d5b;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.1s ease;
+      outline: none;
+    }
+
+    .shop-tab-btn:hover {
+      background: #362c4a;
+      color: #ffea79;
+      border-color: #6b5b7b;
+    }
+
+    .shop-tab-btn.active {
+      background: #ffaa00;
+      color: #120e18;
+      border-color: #ffffff;
+      font-weight: bold;
+      box-shadow: 3px 3px 0 #000;
+    }
+
+    .shop-tab-btn .tab-key {
+      font-size: 8px;
+      opacity: 0.8;
+    }
+
+    .shop-content-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 6px;
+      margin-bottom: 12px;
+    }
+
+    /* Custom retro scrollbar */
+    .shop-content-scroll::-webkit-scrollbar {
+      width: 8px;
+    }
+    .shop-content-scroll::-webkit-scrollbar-track {
+      background: #0f0c16;
+      border-radius: 3px;
+    }
+    .shop-content-scroll::-webkit-scrollbar-thumb {
+      background: #5a4230;
+      border: 1px solid #ffde59;
+      border-radius: 3px;
+    }
+
+    .shop-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 12px;
+    }
+
+    .shop-item-card {
+      background: #221c30;
+      border: 3px solid #4a3b5a;
+      border-radius: 5px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+      transition: transform 0.1s, border-color 0.1s;
+      box-shadow: 3px 3px 0 #0f0a14;
+    }
+
+    .shop-item-card:hover {
+      border-color: #ffde59;
+      transform: translateY(-2px);
+    }
+
+    .shop-item-card.maxed {
+      border-color: #3b82f6;
+      background: #181c2b;
+    }
+
+    .shop-card-top {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .shop-card-icon {
+      font-size: 26px;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #120e18;
+      border: 2px solid #5a4230;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .shop-card-info {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .shop-card-title {
+      font-size: 9px;
+      color: #ffea79;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .shop-card-badge {
+      display: inline-block;
+      font-size: 6.5px;
+      padding: 2px 5px;
+      border-radius: 2px;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+
+    .shop-card-badge.comum { background: #3b82f6; color: #fff; }
+    .shop-card-badge.raro { background: #a855f7; color: #fff; }
+    .shop-card-badge.lendario { background: #eab308; color: #000; }
+
+    .shop-card-level {
+      font-size: 7px;
+      color: #7dd3fc;
+      margin-left: 6px;
+    }
+
+    .shop-card-desc {
+      font-size: 7px;
+      line-height: 1.5;
+      color: #cbd5e1;
+      flex: 1;
+      background: rgba(10, 8, 16, 0.4);
+      padding: 6px;
+      border-radius: 3px;
+      border-left: 2px solid #ffaa00;
+    }
+
+    .shop-card-action {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+    }
+
+    .shop-price-tag {
+      font-size: 8px;
+      color: #ffde59;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-shop-buy {
+      font-family: inherit;
+      font-size: 8px;
+      padding: 7px 12px;
+      background: #22c55e;
+      color: #052e16;
+      border: 2px solid #fff;
+      border-radius: 3px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.08s;
+      outline: none;
+    }
+
+    .btn-shop-buy:hover:not(:disabled) {
+      background: #4ade80;
+      transform: translate(-1px, -1px);
+      box-shadow: 2px 2px 0 #000;
+    }
+
+    .btn-shop-buy:disabled {
+      background: #475569;
+      color: #94a3b8;
+      border-color: #64748b;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .btn-shop-equip {
+      font-family: inherit;
+      font-size: 8px;
+      padding: 7px 12px;
+      background: #3b82f6;
+      color: #fff;
+      border: 2px solid #fff;
+      border-radius: 3px;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .btn-shop-equip:hover {
+      background: #60a5fa;
+    }
+
+    .btn-shop-equipped {
+      font-family: inherit;
+      font-size: 8px;
+      padding: 7px 12px;
+      background: #0f766e;
+      color: #5eead4;
+      border: 2px solid #2dd4bf;
+      border-radius: 3px;
+      cursor: default;
+    }
+
+    /* Abilities Manager in Shop */
+    .abilities-manager-container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .manager-section-title {
+      font-size: 9px;
+      color: #ffde59;
+      margin-bottom: 8px;
+      border-bottom: 1px dashed #5a4230;
+      padding-bottom: 4px;
+    }
+
+    .manager-slots-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+
+    .manager-slot-card {
+      background: #181324;
+      border: 2px solid #5a4230;
+      border-radius: 4px;
+      padding: 10px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      text-align: center;
+    }
+
+    .manager-slot-card.filled {
+      border-color: #ffde59;
+      background: #231c34;
+    }
+
+    .manager-inventory-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 10px;
+    }
+
+    /* Shop Footer */
+    .shop-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 3px solid #3a2b1f;
+      padding-top: 10px;
+    }
+
+    .shop-tip {
+      font-size: 7.5px;
+      color: #94a3b8;
+    }
+
+    .btn-next-wave {
+      background: #ffaa00;
+      color: #1a0f00;
+      font-size: 11px;
+      padding: 10px 20px;
+      margin: 0;
+    }
+
+    .btn-next-wave:hover {
+      background: #ffcc00;
     }
 
     .species-roster {
@@ -499,11 +967,12 @@
     }
   </style>
 </head>
+
 <body>
 
   <div id="game-container">
     <canvas id="gameCanvas" width="960" height="600"></canvas>
-    
+
     <div class="scanlines"></div>
     <div class="vignette"></div>
 
@@ -539,6 +1008,10 @@
       </div>
 
       <div class="hud-bottom">
+        <div class="hud-abilities-container">
+          <div class="hud-abilities-label">HABILIDADES ATIVAS [1 - 5]</div>
+          <div class="hud-abilities" id="hud-abilities"></div>
+        </div>
         <div class="upgrades-badges" id="upgrades-badges"></div>
       </div>
     </div>
@@ -553,7 +1026,7 @@
     <div class="screen-overlay" id="screen-start">
       <h1 class="game-title">CALOPSITA SOULS</h1>
       <p class="subtitle">A Fúria do Bico Amarelo &bull; Roguelike 16-Bit</p>
-      
+
       <div style="margin-bottom: 20px;" id="title-preview-canvas-wrap">
         <!-- Rendered Cockatiel Hero Preview -->
         <canvas id="previewCanvas" width="96" height="96"></canvas>
@@ -566,6 +1039,7 @@
         <div><span>[MOUSE]</span> : Mirar</div>
         <div><span>[CLIQUE ESQUERDO]</span> ou <span>[ESPAÇO]</span> : Atirar Sementes</div>
         <div><span>[SHIFT]</span> ou <span>[CLIQUE DIREITO]</span> : Esquiva / Dash (Invulnerável)</div>
+        <div><span>[1 - 5]</span> : Habilidades Ativas Especiais</div>
         <div><span>[P]</span> ou <span>[ESC]</span> : Pausar</div>
       </div>
 
@@ -586,13 +1060,64 @@
       </div>
     </div>
 
-    <!-- Upgrades Selection Screen -->
-    <div class="screen-overlay hidden" id="screen-upgrade">
-      <h1 class="game-title" style="font-size: 20px;">ONDA SUPERADA!</h1>
-      <p class="subtitle">Escolha um banquete de sementes para aprimorar sua calopsita:</p>
+    <!-- Ability Choice Modal (Every 5 waves) -->
+    <div class="screen-overlay hidden" id="screen-ability-pick">
+      <h1 class="game-title" style="font-size: 20px; color: #ffde59;">⭐ NOVA HABILIDADE ESPECIAL! ⭐</h1>
+      <p class="subtitle" id="ability-pick-subtitle">Você sobreviveu à horda! Escolha 1 habilidade ativa (Teclas [1, 2, 3] ou Clique):</p>
 
-      <div class="upgrade-cards-container" id="cards-container">
+      <div class="upgrade-cards-container" id="ability-cards-container">
         <!-- Generated Cards -->
+      </div>
+    </div>
+
+    <!-- Shop Screen (Between waves) -->
+    <div class="screen-overlay hidden" id="screen-shop">
+      <div class="shop-panel">
+        <div class="shop-header">
+          <div class="shop-title-box">
+            <h1 class="shop-title">🏪 LOJINHA DO COMEDOURO</h1>
+            <div class="shop-wave-tag" id="shop-wave-tag">ONDA 1 CONCLUÍDA</div>
+          </div>
+          <div class="shop-score-badge">
+            <span class="shop-coin-icon">🪙</span>
+            <span class="shop-score-label">SALDO:</span>
+            <span class="shop-score-value" id="shop-score-display">000000</span>
+          </div>
+        </div>
+
+        <!-- Shop Navigation Tabs -->
+        <div class="shop-tabs">
+          <button class="shop-tab-btn active" id="tab-btn-upgrades" data-tab="upgrades">
+            <span class="tab-key">[1]</span> MELHORIAS
+          </button>
+          <button class="shop-tab-btn" id="tab-btn-skins" data-tab="skins">
+            <span class="tab-key">[2]</span> SKINS
+          </button>
+          <button class="shop-tab-btn" id="tab-btn-abilities" data-tab="abilities">
+            <span class="tab-key">[3]</span> HABILIDADES
+          </button>
+        </div>
+
+        <!-- Shop Content Area -->
+        <div class="shop-content-scroll" id="shop-content-scroll">
+          <div id="shop-upgrades-section" class="shop-section">
+            <div class="shop-cards-grid" id="shop-upgrades-grid"></div>
+          </div>
+          <div id="shop-skins-section" class="shop-section hidden">
+            <div class="shop-cards-grid" id="shop-skins-grid"></div>
+          </div>
+          <div id="shop-abilities-section" class="shop-section hidden">
+            <div class="abilities-manager-container" id="shop-abilities-manager"></div>
+          </div>
+        </div>
+
+        <!-- Shop Footer -->
+        <div class="shop-footer">
+          <div class="shop-tip">Dica: Use [1, 2, 3] para alternar abas &bull; [ENTER] para próxima onda</div>
+          <button class="retro-btn btn-next-wave" id="btn-next-wave">
+            PRÓXIMA ONDA ➔ [ENTER]
+          </button>
+        </div>
       </div>
     </div>
 
@@ -697,7 +1222,7 @@
           gain.connect(this.ctx.destination);
 
           noise.start();
-        } catch (e) {}
+        } catch (e) { }
       }
 
       shoot() {
@@ -3894,4 +4419,5 @@
     });
   </script>
 </body>
+
 </html>
