@@ -1,0 +1,3897 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Calopsita Souls: A Fúria das Sementes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background-color: #14121e;
+      color: #fff;
+      font-family: 'Press Start 2P', monospace;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    #game-container {
+      position: relative;
+      width: 960px;
+      height: 600px;
+      max-width: 100vw;
+      max-height: 100vh;
+      background: #2a3d24;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.9), 0 0 0 6px #4d3d2c, 0 0 0 10px #181008;
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    canvas#gameCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+    }
+
+    /* Scanlines / Retro CRT effect */
+    .scanlines {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+      background-size: 100% 4px;
+      z-index: 10;
+      opacity: 0.6;
+    }
+
+    .vignette {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      box-shadow: inset 0 0 90px rgba(0, 0, 0, 0.85);
+      z-index: 11;
+    }
+
+    /* HUD overlay */
+    #hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 20;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .hud-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      text-shadow: 2px 2px 0 #000;
+    }
+
+    .hearts-container {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      background: rgba(10, 10, 15, 0.7);
+      padding: 8px 12px;
+      border: 3px solid #5a4230;
+      border-radius: 4px;
+    }
+
+    .heart-icon {
+      width: 20px;
+      height: 20px;
+      display: inline-block;
+      position: relative;
+    }
+
+    .stamina-bar-container {
+      margin-top: 6px;
+      width: 130px;
+      height: 10px;
+      background: #111;
+      border: 2px solid #5a4230;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .stamina-fill {
+      width: 100%;
+      height: 100%;
+      background: #ffcc00;
+      transition: width 0.1s linear;
+    }
+
+    .hud-center {
+      text-align: center;
+      background: rgba(10, 10, 15, 0.7);
+      padding: 8px 16px;
+      border: 3px solid #5a4230;
+      border-radius: 4px;
+    }
+
+    .wave-title {
+      font-size: 14px;
+      color: #ffde59;
+      margin-bottom: 4px;
+    }
+
+    .wave-subtitle {
+      font-size: 9px;
+      color: #aaa;
+    }
+
+    .hud-right {
+      text-align: right;
+      background: rgba(10, 10, 15, 0.7);
+      padding: 8px 14px;
+      border: 3px solid #5a4230;
+      border-radius: 4px;
+    }
+
+    .score-label {
+      font-size: 9px;
+      color: #aaa;
+      margin-bottom: 4px;
+    }
+
+    .score-value {
+      font-size: 14px;
+      color: #79f2d0;
+    }
+
+    .hud-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .upgrades-badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      max-width: 60%;
+    }
+
+    .badge-icon {
+      background: rgba(20, 20, 30, 0.85);
+      border: 2px solid #ffcc00;
+      border-radius: 4px;
+      padding: 4px 6px;
+      font-size: 8px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      text-shadow: 1px 1px 0 #000;
+    }
+
+    .boss-bar-container {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 480px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: rgba(10, 10, 15, 0.85);
+      padding: 8px 12px;
+      border: 3px solid #991b1b;
+      border-radius: 4px;
+      text-shadow: 2px 2px 0 #000;
+    }
+
+    .boss-name {
+      font-size: 10px;
+      color: #f87171;
+    }
+
+    .boss-bar-track {
+      width: 100%;
+      height: 14px;
+      background: #2b1111;
+      border: 2px solid #6b1414;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .boss-bar-fill {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, #dc2626, #f97316);
+      transition: width 0.15s ease-out;
+    }
+
+    /* Screens: Menu, Game Over, Upgrades */
+    .screen-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(12, 10, 20, 0.92);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 30;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    h1.game-title {
+      font-size: 26px;
+      color: #ffde59;
+      text-shadow: 4px 4px 0 #a36100, 7px 7px 0 #000;
+      margin-bottom: 8px;
+      letter-spacing: 2px;
+      line-height: 1.3;
+    }
+
+    p.subtitle {
+      font-size: 10px;
+      color: #e2e8f0;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    .retro-btn {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 12px;
+      padding: 14px 28px;
+      background: #ffaa00;
+      color: #1a0f00;
+      border: 4px solid #fff;
+      box-shadow: 4px 4px 0 #8c4a00, 6px 6px 0 #000;
+      cursor: pointer;
+      margin: 8px;
+      transition: transform 0.08s, box-shadow 0.08s, background 0.1s;
+      outline: none;
+    }
+
+    .retro-btn:hover {
+      background: #ffcc00;
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0 #8c4a00, 8px 8px 0 #000;
+    }
+
+    .retro-btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0 #8c4a00, 3px 3px 0 #000;
+    }
+
+    .controls-panel {
+      margin-top: 20px;
+      background: rgba(30, 24, 40, 0.85);
+      border: 2px solid #5a4230;
+      padding: 12px 18px;
+      border-radius: 4px;
+      font-size: 8px;
+      color: #cbd5e1;
+      line-height: 1.9;
+      max-width: 520px;
+      text-align: left;
+    }
+
+    .controls-panel span {
+      color: #ffde59;
+    }
+
+    /* Upgrade Cards Modal */
+    .upgrade-cards-container {
+      display: flex;
+      gap: 16px;
+      margin: 20px 0;
+      max-width: 890px;
+    }
+
+    .upgrade-card {
+      background: #252033;
+      border: 4px solid #6b5b7b;
+      padding: 16px 12px;
+      width: 260px;
+      min-height: 310px;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: transform 0.12s, border-color 0.12s, background 0.12s;
+      box-shadow: 4px 4px 0 #120e18;
+    }
+
+    .upgrade-card:hover {
+      transform: translateY(-8px) scale(1.03);
+      border-color: #ffde59;
+      background: #352c48;
+      box-shadow: 6px 10px 0 #0f0a14;
+    }
+
+    .card-icon {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .card-tag {
+      font-size: 7px;
+      padding: 3px 6px;
+      background: #475569;
+      border-radius: 3px;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .card-tag.comum { background: #3b82f6; }
+    .card-tag.raro { background: #a855f7; }
+    .card-tag.lendario { background: #eab308; color: #000; font-weight: bold; }
+
+    .card-title {
+      font-size: 10px;
+      color: #ffea79;
+      margin-bottom: 8px;
+      line-height: 1.4;
+      text-align: center;
+      min-height: 26px;
+    }
+
+    .card-desc {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 4px;
+      flex-grow: 1;
+    }
+
+    .card-buff {
+      color: #4ade80;
+      background: rgba(34, 197, 94, 0.12);
+      border-left: 3px solid #22c55e;
+      padding: 6px 8px;
+      border-radius: 4px;
+      text-align: left;
+      line-height: 1.5;
+      font-size: 7px;
+    }
+
+    .card-debuff {
+      color: #f87171;
+      background: rgba(239, 68, 68, 0.15);
+      border-left: 3px solid #ef4444;
+      padding: 6px 8px;
+      border-radius: 4px;
+      text-align: left;
+      line-height: 1.5;
+      font-size: 7px;
+    }
+
+    .species-roster {
+      margin-top: 12px;
+      background: rgba(20, 16, 28, 0.7);
+      border: 1px solid #5a4230;
+      padding: 8px 12px;
+      border-radius: 4px;
+      max-width: 520px;
+      text-align: center;
+    }
+
+    .roster-title {
+      font-size: 7.5px;
+      color: #ffde59;
+      margin-bottom: 6px;
+      letter-spacing: 1px;
+    }
+
+    .roster-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 10px;
+      justify-content: center;
+      font-size: 6.5px;
+      color: #e2e8f0;
+    }
+
+    .stats-box {
+      background: rgba(20, 16, 28, 0.85);
+      border: 2px solid #5a4230;
+      padding: 14px 20px;
+      margin: 16px 0;
+      font-size: 9px;
+      line-height: 2.2;
+      color: #e2e8f0;
+    }
+
+    .stats-box span {
+      color: #79f2d0;
+    }
+
+    /* Sound toggle */
+    #sound-toggle {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      z-index: 50;
+      background: rgba(15, 15, 25, 0.8);
+      border: 2px solid #6b5b7b;
+      color: #fff;
+      font-family: inherit;
+      font-size: 9px;
+      padding: 6px 10px;
+      cursor: pointer;
+      border-radius: 4px;
+      outline: none;
+    }
+
+    #sound-toggle:hover {
+      border-color: #ffde59;
+      color: #ffde59;
+    }
+
+    /* Floating Banner (e.g. Wave Cleared) */
+    #wave-banner {
+      position: absolute;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      z-index: 25;
+      text-align: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+
+    #wave-banner.active {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.1);
+    }
+
+    #wave-banner h2 {
+      font-size: 24px;
+      color: #ffde59;
+      text-shadow: 4px 4px 0 #8c4a00, 6px 6px 0 #000;
+      margin-bottom: 6px;
+    }
+
+    #wave-banner p {
+      font-size: 10px;
+      color: #fff;
+      text-shadow: 2px 2px 0 #000;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="game-container">
+    <canvas id="gameCanvas" width="960" height="600"></canvas>
+    
+    <div class="scanlines"></div>
+    <div class="vignette"></div>
+
+    <button id="sound-toggle" title="Ligar/Desligar Áudio">🔊 SOM: ON</button>
+
+    <!-- In-Game HUD -->
+    <div id="hud">
+      <div class="hud-top">
+        <div class="hearts-wrapper">
+          <div class="hearts-container" id="hearts-container"></div>
+          <div class="stamina-bar-container" title="Esquiva / Dash">
+            <div class="stamina-fill" id="stamina-fill"></div>
+          </div>
+        </div>
+
+        <div class="hud-center">
+          <div class="wave-title" id="hud-wave-title">ONDA 1</div>
+          <div class="wave-subtitle" id="hud-enemies-left">Inimigos: 0</div>
+        </div>
+
+        <div class="hud-right">
+          <div class="score-label">PONTUAÇÃO</div>
+          <div class="score-value" id="hud-score">000000</div>
+        </div>
+      </div>
+
+      <!-- Boss Health Bar -->
+      <div class="boss-bar-container" id="boss-bar-container">
+        <div class="boss-name" id="boss-name">👑 REI POMBO - O TERROR DAS PRAÇAS</div>
+        <div class="boss-bar-track">
+          <div class="boss-bar-fill" id="boss-bar-fill"></div>
+        </div>
+      </div>
+
+      <div class="hud-bottom">
+        <div class="upgrades-badges" id="upgrades-badges"></div>
+      </div>
+    </div>
+
+    <!-- Wave Notification Banner -->
+    <div id="wave-banner">
+      <h2 id="banner-title">ONDA 1</h2>
+      <p id="banner-subtitle">Prepare suas sementes!</p>
+    </div>
+
+    <!-- Start / Title Screen -->
+    <div class="screen-overlay" id="screen-start">
+      <h1 class="game-title">CALOPSITA SOULS</h1>
+      <p class="subtitle">A Fúria do Bico Amarelo &bull; Roguelike 16-Bit</p>
+      
+      <div style="margin-bottom: 20px;" id="title-preview-canvas-wrap">
+        <!-- Rendered Cockatiel Hero Preview -->
+        <canvas id="previewCanvas" width="96" height="96"></canvas>
+      </div>
+
+      <button class="retro-btn" id="btn-start">INICIAR JORNADA</button>
+
+      <div class="controls-panel">
+        <div><span>[W, A, S, D]</span> ou <span>[SETAS]</span> : Mover Calopsita</div>
+        <div><span>[MOUSE]</span> : Mirar</div>
+        <div><span>[CLIQUE ESQUERDO]</span> ou <span>[ESPAÇO]</span> : Atirar Sementes</div>
+        <div><span>[SHIFT]</span> ou <span>[CLIQUE DIREITO]</span> : Esquiva / Dash (Invulnerável)</div>
+        <div><span>[P]</span> ou <span>[ESC]</span> : Pausar</div>
+      </div>
+
+      <div class="species-roster">
+        <div class="roster-title">⚔️ PÁSSAROS INIMIGOS NO JARDIM:</div>
+        <div class="roster-grid">
+          <span>🐦 Pardal</span>
+          <span>🎵 Bem-te-vi</span>
+          <span>🦜 Papagaio</span>
+          <span>🌸 Beija-flor</span>
+          <span>🪵 Pica-pau</span>
+          <span>🦅 Gavião</span>
+          <span>🍌 Tucano</span>
+          <span>🦉 Coruja</span>
+          <span>💀 Urubu</span>
+          <span>👑 Rei Pombo</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upgrades Selection Screen -->
+    <div class="screen-overlay hidden" id="screen-upgrade">
+      <h1 class="game-title" style="font-size: 20px;">ONDA SUPERADA!</h1>
+      <p class="subtitle">Escolha um banquete de sementes para aprimorar sua calopsita:</p>
+
+      <div class="upgrade-cards-container" id="cards-container">
+        <!-- Generated Cards -->
+      </div>
+    </div>
+
+    <!-- Pause Screen -->
+    <div class="screen-overlay hidden" id="screen-pause">
+      <h1 class="game-title">JOGO PAUSADO</h1>
+      <p class="subtitle">A calopsita está limpando as penas...</p>
+      <button class="retro-btn" id="btn-resume">CONTINUAR</button>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div class="screen-overlay hidden" id="screen-gameover">
+      <h1 class="game-title" style="color: #ef4444;">FIM DE VOO</h1>
+      <p class="subtitle">Sua calopsita caiu em combate...</p>
+
+      <div class="stats-box">
+        <div>Ondas Sobrevividas: <span id="stat-waves">0</span></div>
+        <div>Inimigos Derrotados: <span id="stat-kills">0</span></div>
+        <div>Sementes Disparadas: <span id="stat-shots">0</span></div>
+        <div>Pontuação Final: <span id="stat-score">0</span></div>
+      </div>
+
+      <button class="retro-btn" id="btn-restart">TENTAR NOVAMENTE</button>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       CALOPSITA SOULS - 16-BIT RETRO ROGUELIKE
+       Full standalone action game in pure HTML5 / Canvas / JS
+       ========================================================================== */
+
+    // --- AUDIO SYSTEM (Web Audio API Synthesizer) ---
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playTone(freq, type = 'square', duration = 0.1, gainVal = 0.12, pitchDecay = 0) {
+        if (!this.enabled || !this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          if (pitchDecay !== 0) {
+            osc.frequency.exponentialRampToValueAtTime(
+              Math.max(20, freq + pitchDecay),
+              this.ctx.currentTime + duration
+            );
+          }
+
+          gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch (e) {
+          // Ignore audio quirks
+        }
+      }
+
+      playNoise(duration = 0.15, gainVal = 0.15) {
+        if (!this.enabled || !this.ctx) return;
+        try {
+          const bufferSize = this.ctx.sampleRate * duration;
+          const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+          }
+
+          const noise = this.ctx.createBufferSource();
+          noise.buffer = buffer;
+
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(800, this.ctx.currentTime);
+          filter.frequency.linearRampToValueAtTime(150, this.ctx.currentTime + duration);
+
+          const gain = this.ctx.createGain();
+          gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+
+          noise.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          noise.start();
+        } catch (e) {}
+      }
+
+      shoot() {
+        this.playTone(680, 'square', 0.08, 0.08, -350);
+      }
+
+      dash() {
+        this.playTone(320, 'triangle', 0.15, 0.18, 400);
+      }
+
+      enemyHit() {
+        this.playTone(280 + Math.random() * 120, 'square', 0.06, 0.09, -150);
+      }
+
+      playerHurt() {
+        this.playTone(180, 'sawtooth', 0.25, 0.22, -100);
+      }
+
+      explosion() {
+        this.playNoise(0.28, 0.28);
+      }
+
+      hawkScreech() {
+        this.playTone(850, 'sawtooth', 0.22, 0.15, -450);
+      }
+
+      bemteviCall() {
+        if (!this.enabled || !this.ctx) return;
+        // 3 notes melodic song: "BEM-TE-VI!"
+        const notes = [
+          { freq: 660, start: 0, dur: 0.10 },
+          { freq: 520, start: 0.12, dur: 0.09 },
+          { freq: 880, start: 0.23, dur: 0.20 }
+        ];
+        notes.forEach((n) => {
+          setTimeout(() => {
+            this.playTone(n.freq, 'sine', n.dur, 0.14);
+          }, n.start * 1000);
+        });
+      }
+
+      woodpeckerTap() {
+        if (!this.enabled || !this.ctx) return;
+        for (let i = 0; i < 3; i++) {
+          setTimeout(() => {
+            this.playTone(390, 'square', 0.04, 0.14, -130);
+          }, i * 55);
+        }
+      }
+
+      hummingDart() {
+        this.playTone(1100, 'sine', 0.12, 0.12, 500);
+      }
+
+      toucanShot() {
+        this.playTone(170, 'triangle', 0.20, 0.20, -90);
+      }
+
+      vultureCroak() {
+        this.playTone(130, 'sawtooth', 0.25, 0.18, -40);
+      }
+
+      powerup() {
+        if (!this.enabled || !this.ctx) return;
+        const notes = [440, 554, 659, 880];
+        notes.forEach((freq, idx) => {
+          setTimeout(() => {
+            this.playTone(freq, 'sine', 0.12, 0.14);
+          }, idx * 60);
+        });
+      }
+
+      waveComplete() {
+        if (!this.enabled || !this.ctx) return;
+        const notes = [392, 523, 659, 784, 1046];
+        notes.forEach((freq, idx) => {
+          setTimeout(() => {
+            this.playTone(freq, 'triangle', 0.18, 0.16);
+          }, idx * 80);
+        });
+      }
+
+      gameOver() {
+        if (!this.enabled || !this.ctx) return;
+        const notes = [440, 392, 349, 293];
+        notes.forEach((freq, idx) => {
+          setTimeout(() => {
+            this.playTone(freq, 'sawtooth', 0.3, 0.2);
+          }, idx * 140);
+        });
+      }
+    }
+
+    const sound = new SoundEngine();
+
+    // Toggle audio button
+    const soundBtn = document.getElementById('sound-toggle');
+    soundBtn.addEventListener('click', () => {
+      sound.init();
+      sound.enabled = !sound.enabled;
+      soundBtn.textContent = sound.enabled ? '🔊 SOM: ON' : '🔈 SOM: OFF';
+    });
+
+    // --- SPRITE GENERATOR (Procedural 16-Bit Pixel Art) ---
+    // Creates pre-cached pixel art canvases so we have authentic 16-bit sprites without external assets
+    class PixelArtFactory {
+      static createBuffer(w, h) {
+        const can = document.createElement('canvas');
+        can.width = w;
+        can.height = h;
+        const ctx = can.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+        return { canvas: can, ctx: ctx };
+      }
+
+      // Draw Cockatiel (Calopsita) - Wing up & Wing down frames
+      static generateCockatiel(frame = 0) {
+        const { canvas, ctx } = this.createBuffer(28, 28);
+        const wingOffset = frame === 0 ? 0 : 2;
+
+        // Shadow under bird
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+        ctx.fillRect(6, 22, 16, 4);
+
+        // Body (Light Grey with slate shading)
+        ctx.fillStyle = '#6b7280';
+        ctx.fillRect(8, 10, 12, 12);
+        ctx.fillStyle = '#9ca3af';
+        ctx.fillRect(9, 11, 10, 10);
+        ctx.fillStyle = '#e5e7eb';
+        ctx.fillRect(10, 12, 8, 8); // White chest belly
+
+        // Tail feathers
+        ctx.fillStyle = '#4b5563';
+        ctx.fillRect(4, 18, 5, 4);
+        ctx.fillRect(2, 20, 3, 3);
+
+        // Wings (with distinctive Cockatiel white wing bar)
+        ctx.fillStyle = '#4b5563';
+        ctx.fillRect(8, 11 - wingOffset, 4, 10);
+        ctx.fillStyle = '#f9fafb'; // White wing patch
+        ctx.fillRect(10, 13 - wingOffset, 3, 6);
+
+        // Head (Bright Yellow)
+        ctx.fillStyle = '#facc15';
+        ctx.fillRect(16, 7, 9, 9);
+        ctx.fillStyle = '#fef08a';
+        ctx.fillRect(18, 8, 6, 7);
+
+        // Crest (Top yellow feathers - signature Calopsita mohawk)
+        ctx.fillStyle = '#eab308';
+        ctx.fillRect(16, 3, 3, 5);
+        ctx.fillRect(14, 1, 3, 4);
+        ctx.fillRect(12, 0, 2, 3);
+
+        // Orange Cheek Patch (Signature blush)
+        ctx.fillStyle = '#ea580c';
+        ctx.fillRect(19, 11, 4, 4);
+        ctx.fillStyle = '#f97316';
+        ctx.fillRect(20, 12, 2, 2);
+
+        // Eye
+        ctx.fillStyle = '#111827';
+        ctx.fillRect(21, 8, 2, 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(21, 8, 1, 1); // Sparkle
+
+        // Beak (Curved seed-eating beak)
+        ctx.fillStyle = '#d97706';
+        ctx.fillRect(25, 11, 3, 3);
+        ctx.fillStyle = '#b45309';
+        ctx.fillRect(25, 13, 2, 1);
+
+        // Feet (Orange-pink)
+        ctx.fillStyle = '#fb923c';
+        ctx.fillRect(12, 22, 2, 2);
+        ctx.fillRect(16, 22, 2, 2);
+
+        return canvas;
+      }
+
+      // Pardal (Sparrow) - Agile, small, tan/brown
+      static generateSparrow(frame = 0) {
+        const { canvas, ctx } = this.createBuffer(20, 20);
+        const wingOffset = frame === 0 ? 0 : 2;
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+        ctx.fillRect(4, 16, 12, 3);
+
+        // Body
+        ctx.fillStyle = '#78350f';
+        ctx.fillRect(6, 7, 8, 8);
+        ctx.fillStyle = '#d97706';
+        ctx.fillRect(7, 8, 6, 6);
+        ctx.fillStyle = '#fed7aa'; // Light belly
+        ctx.fillRect(8, 10, 5, 4);
+
+        // Wings
+        ctx.fillStyle = '#451a03';
+        ctx.fillRect(4, 7 - wingOffset, 4, 6);
+
+        // Head
+        ctx.fillStyle = '#92400e';
+        ctx.fillRect(11, 5, 6, 6);
+        // Eye
+        ctx.fillStyle = '#000';
+        ctx.fillRect(14, 6, 2, 2);
+        // Beak
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillRect(17, 8, 2, 2);
+
+        return canvas;
+      }
+
+      // Papagaio (Parrot) - Green, red shoulders, ranged shooter
+      static generateParrot(frame = 0) {
+        const { canvas, ctx } = this.createBuffer(26, 26);
+        const flap = frame === 0 ? 0 : 2;
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.22)';
+        ctx.fillRect(5, 20, 16, 4);
+
+        // Body
+        ctx.fillStyle = '#15803d';
+        ctx.fillRect(8, 8, 10, 12);
+        ctx.fillStyle = '#22c55e';
+        ctx.fillRect(9, 9, 8, 10);
+
+        // Tail
+        ctx.fillStyle = '#1e3a8a'; // Blue tail
+        ctx.fillRect(3, 16, 6, 4);
+
+        // Wing with red/yellow shoulder
+        ctx.fillStyle = '#dc2626'; // Red shoulder
+        ctx.fillRect(8, 9 - flap, 4, 4);
+        ctx.fillStyle = '#eab308'; // Yellow stripe
+        ctx.fillRect(8, 13 - flap, 4, 2);
+        ctx.fillStyle = '#16a34a'; // Green wing tip
+        ctx.fillRect(7, 15 - flap, 5, 5);
+
+        // Head
+        ctx.fillStyle = '#16a34a';
+        ctx.fillRect(15, 5, 8, 8);
+        ctx.fillStyle = '#4ade80';
+        ctx.fillRect(16, 6, 6, 6);
+
+        // Big Curved Parrot Beak
+        ctx.fillStyle = '#1f2937';
+        ctx.fillRect(23, 8, 3, 5);
+        ctx.fillRect(22, 12, 2, 2);
+
+        // Eye with white patch
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(17, 7, 4, 4);
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(19, 8, 2, 2);
+
+        return canvas;
+      }
+
+      // Coruja (Owl) - Big round tank, glowing eyes
+      static generateOwl(frame = 0) {
+        const { canvas, ctx } = this.createBuffer(32, 32);
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+        ctx.fillRect(6, 25, 20, 5);
+
+        // Stout round body
+        ctx.fillStyle = '#44403c';
+        ctx.fillRect(8, 8, 16, 18);
+        ctx.fillStyle = '#78716c';
+        ctx.fillRect(9, 9, 14, 16);
+
+        // Feathery chest markings
+        ctx.fillStyle = '#e7e5e4';
+        ctx.fillRect(12, 13, 8, 11);
+        ctx.fillStyle = '#57534e';
+        ctx.fillRect(13, 15, 2, 2);
+        ctx.fillRect(17, 15, 2, 2);
+        ctx.fillRect(15, 19, 2, 2);
+
+        // Horn tufts
+        ctx.fillStyle = '#292524';
+        ctx.fillRect(8, 4, 3, 5);
+        ctx.fillRect(21, 4, 3, 5);
+
+        // Huge glowing yellow eyes
+        ctx.fillStyle = '#fef08a';
+        ctx.fillRect(9, 9, 6, 6);
+        ctx.fillRect(17, 9, 6, 6);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(11, 11, 3, 3);
+        ctx.fillRect(18, 11, 3, 3);
+
+        // Sharp hooked beak
+        ctx.fillStyle = '#ea580c';
+        ctx.fillRect(15, 12, 2, 4);
+
+        // Big wings
+        ctx.fillStyle = '#292524';
+        const wingW = frame === 0 ? 3 : 5;
+        ctx.fillRect(6 - (frame === 1 ? 2 : 0), 10, wingW, 12);
+        ctx.fillRect(23, 10, wingW, 12);
+
+        return canvas;
+      }
+
+      // Gavião (Hawk) - Fierce raptor, sharp wings
+      static generateHawk(frame = 0) {
+        const { canvas, ctx } = this.createBuffer(30, 30);
+        const dive = frame === 1;
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+        ctx.fillRect(7, 24, 16, 4);
+
+        // Body
+        ctx.fillStyle = '#3f2e23';
+        ctx.fillRect(10, 8, 10, 14);
+        ctx.fillStyle = '#fef3c7'; // Mottled chest
+        ctx.fillRect(12, 11, 6, 10);
+
+        // Sharp Wings
+        ctx.fillStyle = '#291e17';
+        if (!dive) {
+          ctx.fillRect(3, 10, 8, 8);
+          ctx.fillRect(19, 10, 8, 8);
+        } else {
+          // Streamlined dive wings
+          ctx.fillRect(6, 6, 6, 14);
+          ctx.fillRect(18, 6, 6, 14);
+        }
+
+        // Head
+        ctx.fillStyle = '#f8fafc'; // White crown
+        ctx.fillRect(12, 4, 7, 7);
+        // Fierce yellow eye with dark brow
+        ctx.fillStyle = '#78350f';
+        ctx.fillRect(14, 5, 4, 1); // Angry eyebrow
+        ctx.fillStyle = '#facc15';
+        ctx.fillRect(15, 6, 3, 3);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(16, 7, 2, 2);
+
+        // Hooked predatory beak
+        ctx.fillStyle = '#f59e0b';
+        ctx.fillRect(19, 7, 4, 4);
+        ctx.fillStyle = '#1c1917';
+        ctx.fillRect(21, 9, 2, 3);
+
+        return canvas;
+      }
+
+      // Beija-flor (Hummingbird) - Iridescent emerald green, ruby throat, needle beak, rapid wing flutter
+      static generateHummingbird(frame = 0) {
+        const { canvas, ctx } = this.createBuffer(20, 20);
+        const flutter = frame === 0 ? 0 : 3;
+
+        // Shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
+        ctx.fillRect(4, 16, 10, 2);
+
+        // Body (Emerald Green iridescent)
+        ctx.fillStyle = '#059669';
+        ctx.fillRect(6, 7, 7, 6);
+        ctx.fillStyle = '#10b981';
+        ctx.fillRect(7, 8, 5, 4);
+
+        // Shimmering Ruby-pink Throat
+        ctx.fillStyle = '#db2777';
+        ctx.fillRect(10, 8, 3, 3);
+        ctx.fillStyle = '#f472b6';
+        ctx.fillRect(11, 9, 2, 2);
+
+        // Thin Needle Beak (Long and slender)
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(14, 8, 5, 1);
+        ctx.fillRect(13, 8, 2, 2);
+
+        // Eye
+        ctx.fillStyle = '#000';
+        ctx.fillRect(11, 6, 2, 2);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(11, 6, 1, 1);
+
+        // Fluttering Translucent Wings
+        ctx.fillStyle = 'rgba(148, 163, 184, 0.85)';
+        if (frame === 0) {
+          ctx.fillRect(3, 3, 5, 5);
+          ctx.fillStyle = '#64748b';
+          ctx.fillRect(4, 4, 3, 3);
+        } else {
+          ctx.fillRect(3, 9, 5, 5);
+          ctx.fillStyle = '#64748b';
+          ctx.fillRect(4, 10, 3, 3);
+        }
+
+        // Forked Tail
+        ctx.fillStyle = '#047857';
+        ctx.fillRect(3, 11, 4, 2);
+        ctx.fillRect(2, 12, 3, 2);
+
+        return canvas;
+      }
+
+      // Tucano (Toucan) - Sleek black body, white bib, huge multicolored curved beak
+      static generateToucan(frame = 0) {
+        const { canvas, ctx } = this.createBuffer(30, 30);
+        const flap = frame === 0 ? 0 : 2;
+
+        // Shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+        ctx.fillRect(6, 25, 18, 4);
+
+        // Jet Black Body
+        ctx.fillStyle = '#09090b';
+        ctx.fillRect(8, 9, 12, 13);
+        ctx.fillStyle = '#18181b';
+        ctx.fillRect(9, 10, 10, 11);
+
+        // Snow-White Throat Bib with Yellow bottom rim
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(13, 9, 6, 7);
+        ctx.fillStyle = '#fef08a';
+        ctx.fillRect(13, 14, 6, 2);
+
+        // Scarlet red undertail
+        ctx.fillStyle = '#dc2626';
+        ctx.fillRect(5, 18, 4, 3);
+
+        // Wing
+        ctx.fillStyle = '#27272a';
+        ctx.fillRect(7, 10 - flap, 5, 10);
+
+        // Head
+        ctx.fillStyle = '#09090b';
+        ctx.fillRect(14, 5, 7, 7);
+
+        // Sky-blue eye ring & eye
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillRect(16, 6, 4, 4);
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(17, 7, 2, 2);
+
+        // Enormous Keel-billed Toucan Beak
+        // Top ridge yellow
+        ctx.fillStyle = '#facc15';
+        ctx.fillRect(20, 4, 8, 3);
+        // Middle orange/red
+        ctx.fillStyle = '#f97316';
+        ctx.fillRect(20, 7, 9, 3);
+        ctx.fillStyle = '#ef4444';
+        ctx.fillRect(21, 9, 7, 2);
+        // Black tip
+        ctx.fillStyle = '#09090b';
+        ctx.fillRect(27, 5, 3, 6);
+        // Lower mandible pale green
+        ctx.fillStyle = '#4ade80';
+        ctx.fillRect(20, 10, 7, 2);
+
+        return canvas;
+      }
+
+      // Urubu (Black Vulture) - Charcoal ragged body, bare wrinkled pink/grey head, heavy hooked beak
+      static generateVulture(frame = 0) {
+        const { canvas, ctx } = this.createBuffer(32, 32);
+        const flap = frame === 0 ? 0 : 3;
+
+        // Shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
+        ctx.fillRect(6, 26, 20, 5);
+
+        // Charcoal Body
+        ctx.fillStyle = '#18181b';
+        ctx.fillRect(8, 10, 14, 15);
+        ctx.fillStyle = '#27272a';
+        ctx.fillRect(9, 11, 12, 13);
+
+        // Ruffled grey neck ruff
+        ctx.fillStyle = '#52525b';
+        ctx.fillRect(14, 9, 6, 4);
+        ctx.fillStyle = '#71717a';
+        ctx.fillRect(15, 10, 4, 3);
+
+        // Bare wrinkled vulture head
+        ctx.fillStyle = '#881337';
+        ctx.fillRect(18, 5, 6, 6);
+        ctx.fillStyle = '#a1a1aa';
+        ctx.fillRect(19, 6, 4, 4);
+
+        // Sinister yellow-orange eye
+        ctx.fillStyle = '#f59e0b';
+        ctx.fillRect(20, 6, 2, 2);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(21, 7, 1, 1);
+
+        // Heavy dark hooked beak
+        ctx.fillStyle = '#3f3f46';
+        ctx.fillRect(24, 7, 4, 3);
+        ctx.fillStyle = '#18181b';
+        ctx.fillRect(26, 9, 2, 3);
+
+        // Wide ragged wings
+        ctx.fillStyle = '#18181b';
+        ctx.fillRect(4, 9 - flap, 6, 14);
+        ctx.fillRect(19, 9 - flap, 8, 12);
+        // Ragged primary feather tips
+        ctx.fillStyle = '#09090b';
+        ctx.fillRect(3, 14 - flap, 2, 5);
+        ctx.fillRect(5, 17 - flap, 2, 5);
+
+        return canvas;
+      }
+
+      // Pica-pau (Woodpecker) - Crimson pointed crest, zebra-striped wings, sharp chisel beak
+      static generateWoodpecker(frame = 0) {
+        const { canvas, ctx } = this.createBuffer(24, 24);
+        const peckOffset = frame === 0 ? 0 : 2;
+
+        // Shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+        ctx.fillRect(4, 20, 14, 3);
+
+        // Body
+        ctx.fillStyle = '#09090b';
+        ctx.fillRect(7, 8, 9, 11);
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(8, 9, 7, 9);
+
+        // Zebra striped wings
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(6, 10, 4, 8);
+        ctx.fillStyle = '#09090b';
+        ctx.fillRect(6, 12, 4, 2);
+        ctx.fillRect(6, 15, 4, 2);
+
+        // Head
+        ctx.fillStyle = '#09090b';
+        ctx.fillRect(11 + peckOffset, 5, 7, 7);
+
+        // White facial stripes
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(12 + peckOffset, 7, 6, 2);
+
+        // Piercing Scarlet Crest (Punk mohawk)
+        ctx.fillStyle = '#dc2626';
+        ctx.fillRect(10 + peckOffset, 1, 4, 5);
+        ctx.fillRect(12 + peckOffset, 0, 3, 5);
+        ctx.fillStyle = '#ef4444';
+        ctx.fillRect(11 + peckOffset, 2, 2, 3);
+
+        // Eye
+        ctx.fillStyle = '#fde047';
+        ctx.fillRect(15 + peckOffset, 6, 2, 2);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(16 + peckOffset, 6, 1, 1);
+
+        // Straight Steel-grey Chisel Beak
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillRect(18 + peckOffset, 8, 5, 2);
+        ctx.fillStyle = '#475569';
+        ctx.fillRect(18 + peckOffset, 9, 4, 1);
+
+        return canvas;
+      }
+
+      // Bem-te-vi (Great Kiskadee) - Golden yellow chest, olive-brown back, black/white bandit mask
+      static generateBemtevi(frame = 0) {
+        const { canvas, ctx } = this.createBuffer(24, 24);
+        const flap = frame === 0 ? 0 : 2;
+
+        // Shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+        ctx.fillRect(4, 19, 14, 3);
+
+        // Sulfur Yellow Chest & Belly
+        ctx.fillStyle = '#facc15';
+        ctx.fillRect(7, 9, 9, 9);
+        ctx.fillStyle = '#eab308';
+        ctx.fillRect(8, 11, 7, 6);
+
+        // Olive-brown Back & Wings
+        ctx.fillStyle = '#78350f';
+        ctx.fillRect(5, 8 - flap, 5, 9);
+        ctx.fillStyle = '#854d0e';
+        ctx.fillRect(6, 10 - flap, 3, 6);
+
+        // Head
+        ctx.fillStyle = '#78350f';
+        ctx.fillRect(12, 5, 7, 7);
+
+        // White Supercilium (eyebrow stripe) and white throat
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(12, 4, 7, 2);
+        ctx.fillRect(13, 10, 5, 2);
+
+        // Black Bandit Eye-Mask
+        ctx.fillStyle = '#09090b';
+        ctx.fillRect(12, 6, 7, 3);
+
+        // Hidden yellow crown splash
+        ctx.fillStyle = '#fde047';
+        ctx.fillRect(13, 3, 3, 2);
+
+        // Eye
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(15, 6, 2, 2);
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(16, 7, 1, 1);
+
+        // Pointed Flycatcher Beak
+        ctx.fillStyle = '#18181b';
+        ctx.fillRect(19, 7, 4, 2);
+
+        return canvas;
+      }
+
+      // Boss: Pombo Rei (King Pigeon) - Huge, iridescent, wears a crown!
+      static generateBossPigeon(frame = 0) {
+        const { canvas, ctx } = this.createBuffer(48, 48);
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(10, 40, 28, 6);
+
+        // Big round body
+        ctx.fillStyle = '#64748b';
+        ctx.fillRect(12, 16, 24, 24);
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillRect(14, 18, 20, 20);
+
+        // Iridescent neck sheen (green and purple shimmer)
+        ctx.fillStyle = '#059669';
+        ctx.fillRect(22, 16, 12, 6);
+        ctx.fillStyle = '#9333ea';
+        ctx.fillRect(24, 20, 10, 5);
+
+        // Tail
+        ctx.fillStyle = '#334155';
+        ctx.fillRect(6, 28, 8, 8);
+
+        // Wings
+        ctx.fillStyle = '#475569';
+        const flap = frame === 0 ? 0 : 3;
+        ctx.fillRect(12, 20 - flap, 10, 16);
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(14, 24 - flap, 8, 3);
+        ctx.fillRect(14, 29 - flap, 8, 3);
+
+        // Head
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillRect(26, 10, 14, 14);
+
+        // Pigeon Red Eyes
+        ctx.fillStyle = '#ef4444';
+        ctx.fillRect(32, 14, 4, 4);
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(34, 15, 2, 2);
+
+        // Pigeon Beak with white cere (caruncle)
+        ctx.fillStyle = '#e2e8f0'; // Cere
+        ctx.fillRect(39, 16, 3, 3);
+        ctx.fillStyle = '#fb923c'; // Beak tip
+        ctx.fillRect(41, 18, 4, 3);
+
+        // Golden Royal Crown!
+        ctx.fillStyle = '#facc15';
+        ctx.fillRect(26, 4, 14, 6);
+        ctx.fillRect(26, 2, 3, 3);
+        ctx.fillRect(31, 1, 4, 4);
+        ctx.fillRect(37, 2, 3, 3);
+        // Ruby gem in crown
+        ctx.fillStyle = '#dc2626';
+        ctx.fillRect(32, 6, 2, 2);
+
+        return canvas;
+      }
+
+      // Baby Cockatiel Helper (Drone companion)
+      static generateBabyCockatiel() {
+        const { canvas, ctx } = this.createBuffer(16, 16);
+        // Cute mini round yellow ball
+        ctx.fillStyle = '#fde047';
+        ctx.fillRect(3, 4, 10, 9);
+        // Mini crest
+        ctx.fillStyle = '#eab308';
+        ctx.fillRect(4, 1, 2, 3);
+        // Tiny blush
+        ctx.fillStyle = '#f97316';
+        ctx.fillRect(8, 8, 3, 3);
+        // Eye
+        ctx.fillStyle = '#111';
+        ctx.fillRect(9, 5, 2, 2);
+        // Tiny beak
+        ctx.fillStyle = '#d97706';
+        ctx.fillRect(12, 7, 2, 2);
+        return canvas;
+      }
+
+      // Seed Projectiles (Millet, Sunflower, Explosive Chili, Enemy Feathers, Açaí, Splinter, Sonic, Miasma)
+      static generateSeed(type = 'millet') {
+        const { canvas, ctx } = this.createBuffer(12, 12);
+        if (type === 'millet') {
+          // Yellow-golden round millet seed
+          ctx.fillStyle = '#d97706';
+          ctx.fillRect(4, 3, 5, 6);
+          ctx.fillStyle = '#fef08a';
+          ctx.fillRect(5, 4, 3, 4);
+        } else if (type === 'sunflower') {
+          // Striped black/white sunflower seed
+          ctx.fillStyle = '#1e293b';
+          ctx.fillRect(3, 3, 6, 7);
+          ctx.fillStyle = '#f8fafc';
+          ctx.fillRect(4, 4, 1, 5);
+          ctx.fillRect(7, 4, 1, 5);
+        } else if (type === 'chili') {
+          // Red glowing spicy seed
+          ctx.fillStyle = '#ef4444';
+          ctx.fillRect(3, 3, 6, 6);
+          ctx.fillStyle = '#fbbf24';
+          ctx.fillRect(5, 5, 2, 2);
+        } else if (type === 'enemy') {
+          // Dark purple / red cursed feather or pellet
+          ctx.fillStyle = '#7f1d1d';
+          ctx.fillRect(3, 4, 6, 4);
+          ctx.fillStyle = '#f87171';
+          ctx.fillRect(4, 5, 4, 2);
+        } else if (type === 'acai') {
+          // Dark purple açaí fruit
+          ctx.fillStyle = '#3b0764';
+          ctx.fillRect(3, 3, 6, 6);
+          ctx.fillStyle = '#7e22ce';
+          ctx.fillRect(4, 4, 4, 4);
+          ctx.fillStyle = '#e9d5ff';
+          ctx.fillRect(4, 4, 1, 1);
+          ctx.fillStyle = '#15803d';
+          ctx.fillRect(5, 2, 2, 1);
+        } else if (type === 'splinter') {
+          // Sharp pointy wooden splinter
+          ctx.fillStyle = '#78350f';
+          ctx.fillRect(2, 5, 8, 2);
+          ctx.fillStyle = '#b45309';
+          ctx.fillRect(4, 4, 5, 4);
+          ctx.fillStyle = '#fde68a';
+          ctx.fillRect(8, 5, 3, 2);
+        } else if (type === 'sonic') {
+          // Golden musical sonic shockwave arc
+          ctx.fillStyle = '#eab308';
+          ctx.fillRect(4, 2, 4, 8);
+          ctx.fillStyle = '#fef08a';
+          ctx.fillRect(5, 3, 2, 6);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(7, 4, 2, 4);
+        } else if (type === 'miasma') {
+          // Toxic swirling purple spore
+          ctx.fillStyle = '#581c87';
+          ctx.fillRect(3, 3, 6, 6);
+          ctx.fillStyle = '#a855f7';
+          ctx.fillRect(4, 4, 4, 4);
+          ctx.fillStyle = '#22c55e';
+          ctx.fillRect(5, 5, 2, 2);
+        }
+        return canvas;
+      }
+
+      // Prop: Bush or Birdbath
+      static generateProp(type = 'bush') {
+        const { canvas, ctx } = this.createBuffer(32, 32);
+        if (type === 'bush') {
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+          ctx.fillRect(4, 24, 24, 6);
+
+          ctx.fillStyle = '#14532d';
+          ctx.fillRect(4, 10, 24, 16);
+          ctx.fillStyle = '#16a34a';
+          ctx.fillRect(6, 8, 20, 16);
+          ctx.fillStyle = '#4ade80';
+          ctx.fillRect(8, 10, 6, 6);
+          ctx.fillRect(18, 12, 6, 6);
+          // Red berries
+          ctx.fillStyle = '#dc2626';
+          ctx.fillRect(10, 14, 3, 3);
+          ctx.fillRect(20, 16, 3, 3);
+          ctx.fillRect(15, 20, 3, 3);
+        } else if (type === 'birdbath') {
+          // Stone birdbath with sparkling water
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+          ctx.fillRect(6, 26, 20, 5);
+          // Pedestal
+          ctx.fillStyle = '#64748b';
+          ctx.fillRect(13, 16, 6, 12);
+          // Basin
+          ctx.fillStyle = '#94a3b8';
+          ctx.fillRect(4, 10, 24, 7);
+          ctx.fillStyle = '#cbd5e1';
+          ctx.fillRect(6, 8, 20, 4);
+          // Blue water
+          ctx.fillStyle = '#38bdf8';
+          ctx.fillRect(8, 9, 16, 3);
+          ctx.fillStyle = '#bae6fd';
+          ctx.fillRect(10, 9, 4, 1);
+        }
+        return canvas;
+      }
+    }
+
+    // Cache sprites
+    const Sprites = {
+      player: [PixelArtFactory.generateCockatiel(0), PixelArtFactory.generateCockatiel(1)],
+      sparrow: [PixelArtFactory.generateSparrow(0), PixelArtFactory.generateSparrow(1)],
+      parrot: [PixelArtFactory.generateParrot(0), PixelArtFactory.generateParrot(1)],
+      owl: [PixelArtFactory.generateOwl(0), PixelArtFactory.generateOwl(1)],
+      hawk: [PixelArtFactory.generateHawk(0), PixelArtFactory.generateHawk(1)],
+      hummingbird: [PixelArtFactory.generateHummingbird(0), PixelArtFactory.generateHummingbird(1)],
+      toucan: [PixelArtFactory.generateToucan(0), PixelArtFactory.generateToucan(1)],
+      vulture: [PixelArtFactory.generateVulture(0), PixelArtFactory.generateVulture(1)],
+      woodpecker: [PixelArtFactory.generateWoodpecker(0), PixelArtFactory.generateWoodpecker(1)],
+      bemtevi: [PixelArtFactory.generateBemtevi(0), PixelArtFactory.generateBemtevi(1)],
+      boss: [PixelArtFactory.generateBossPigeon(0), PixelArtFactory.generateBossPigeon(1)],
+      baby: PixelArtFactory.generateBabyCockatiel(),
+      seeds: {
+        millet: PixelArtFactory.generateSeed('millet'),
+        sunflower: PixelArtFactory.generateSeed('sunflower'),
+        chili: PixelArtFactory.generateSeed('chili'),
+        enemy: PixelArtFactory.generateSeed('enemy'),
+        acai: PixelArtFactory.generateSeed('acai'),
+        splinter: PixelArtFactory.generateSeed('splinter'),
+        sonic: PixelArtFactory.generateSeed('sonic'),
+        miasma: PixelArtFactory.generateSeed('miasma')
+      },
+      props: {
+        bush: PixelArtFactory.generateProp('bush'),
+        birdbath: PixelArtFactory.generateProp('birdbath')
+      }
+    };
+
+    // Render Preview in Title Screen
+    const previewCanvas = document.getElementById('previewCanvas');
+    if (previewCanvas) {
+      const pctx = previewCanvas.getContext('2d');
+      pctx.imageSmoothingEnabled = false;
+      pctx.scale(3.4, 3.4);
+      pctx.drawImage(Sprites.player[0], 0, 0);
+    }
+
+    // --- GAME ENGINE & STATE ---
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+
+    const ARENA = {
+      x: 30,
+      y: 30,
+      w: canvas.width - 60,
+      h: canvas.height - 60
+    };
+
+    // Upgrades Catalog with Buffs and Debuffs (Roguelike Blessings & Curses)
+    const UPGRADES_POOL = [
+      {
+        id: 'triple_shot',
+        title: 'Dispersão Tripla',
+        buff: '+ Dispara 3 sementes em leque a cada bicada!',
+        debuff: '- Recuo nas asas: +25% de tempo entre tiros.',
+        tag: 'comum',
+        icon: '🌾',
+        apply: (player) => {
+          player.multishot += 2;
+          player.fireRate *= 1.25;
+        }
+      },
+      {
+        id: 'rapid_fire',
+        title: 'Bico de Metralhadora',
+        buff: '+ Aumenta a velocidade de disparo em +40%!',
+        debuff: '- Desgaste no bico: -18% de dano por semente.',
+        tag: 'comum',
+        icon: '⚡',
+        apply: (player) => {
+          player.fireRate *= 0.60;
+          player.damageMultiplier *= 0.82;
+        }
+      },
+      {
+        id: 'chili_explosion',
+        title: 'Semente de Pimenta',
+        buff: '+ Sementes explodem em área devastadora de fogo!',
+        debuff: '- Semente pesada: -25% de velocidade dos tiros.',
+        tag: 'raro',
+        icon: '🌶️',
+        apply: (player) => {
+          player.explosiveSeeds = true;
+          player.projectileSpeedMultiplier *= 0.75;
+        }
+      },
+      {
+        id: 'piercing_seed',
+        title: 'Semente Perfurante',
+        buff: '+ As sementes atravessam até 2 pássaros alinhados.',
+        debuff: '- Projétil afunilado: -25% de raio de impacto.',
+        tag: 'comum',
+        icon: '🏹',
+        apply: (player) => {
+          player.piercing += 2;
+          player.projectileRadiusMultiplier *= 0.75;
+        }
+      },
+      {
+        id: 'sunflower_snack',
+        title: 'Girassol Dourado',
+        buff: '+ +1 Coração máximo e restaura toda a saúde!',
+        debuff: '- Digestão pesada: -12% de velocidade de voo.',
+        tag: 'comum',
+        icon: '🌻',
+        apply: (player) => {
+          player.maxHp += 2;
+          player.hp = player.maxHp;
+          player.speed *= 0.88;
+        }
+      },
+      {
+        id: 'swift_wings',
+        title: 'Asas da Tempestade',
+        buff: '+ +30% de velocidade de voo e esquiva turbinada.',
+        debuff: '- Penas finas: -25% de tempo invulnerável pós-dano.',
+        tag: 'comum',
+        icon: '💨',
+        apply: (player) => {
+          player.speed *= 1.30;
+          player.dashSpeed *= 1.20;
+          player.invulnerableDurationMultiplier *= 0.75;
+        }
+      },
+      {
+        id: 'sharp_beak',
+        title: 'Bico Afiado',
+        buff: '+ +45% de dano base em todas as sementes.',
+        debuff: '- Peso no crânio: +20% no cooldown da Esquiva.',
+        tag: 'raro',
+        icon: '🗡️',
+        apply: (player) => {
+          player.damageMultiplier *= 1.45;
+          player.dashCooldownMax *= 1.20;
+        }
+      },
+      {
+        id: 'homing_seeds',
+        title: 'Sementes Guiadas',
+        buff: '+ Sementes curvam em pleno voo caçando os pássaros.',
+        debuff: '- Sementes leves: -20% de dano por disparo.',
+        tag: 'raro',
+        icon: '🎯',
+        apply: (player) => {
+          player.homing = true;
+          player.damageMultiplier *= 0.80; // Exactly 20% less damage requested
+        }
+      },
+      {
+        id: 'baby_cockatiel',
+        title: 'Filhote Ajudante',
+        buff: '+ Um filhotinho orbita e atira sementes por você!',
+        debuff: '- Cuidado parental: -10% de velocidade de voo.',
+        tag: 'lendario',
+        icon: '🐥',
+        apply: (player) => {
+          player.babyCompanions++;
+          player.speed *= 0.90;
+        }
+      },
+      {
+        id: 'feather_shield',
+        title: 'Barreira de Penas',
+        buff: '+ Escudo periódico que anula 1 dano completamente.',
+        debuff: '- Penugem densa: +25% no cooldown da Esquiva.',
+        tag: 'lendario',
+        icon: '🛡️',
+        apply: (player) => {
+          player.hasShield = true;
+          player.shieldReady = true;
+          player.dashCooldownMax *= 1.25;
+        }
+      },
+      {
+        id: 'dash_cooldown',
+        title: 'Reflexo Aviário',
+        buff: '+ Tempo de recarga da Esquiva (Dash) cortado em 50%!',
+        debuff: '- Esforço cardíaco: Diminui a vida total em 10%.',
+        tag: 'comum',
+        icon: '✨',
+        apply: (player) => {
+          player.dashCooldownMax *= 0.50;
+          player.maxHp = Math.max(1, +(player.maxHp * 0.90).toFixed(1)); // Exactly 10% less max HP requested
+          player.hp = Math.min(player.hp, player.maxHp);
+        }
+      },
+      {
+        id: 'territorial_screech',
+        title: 'Piado Territorial',
+        buff: '+ Grita a cada 8s empurrando e atordoando pássaros!',
+        debuff: '- Garganta rouca: -15% de velocidade de tiro normal.',
+        tag: 'lendario',
+        icon: '📢',
+        apply: (player) => {
+          player.hasTerritorialScreech = true;
+          player.fireRate *= 1.15;
+        }
+      },
+      {
+        id: 'millet_frenzy',
+        title: 'Frenesi do Alpiste',
+        buff: '+ Acertos acumulam cadência de tiro (até +50%).',
+        debuff: '- Euforia nervosa: +35% de dispersão (menos precisão).',
+        tag: 'raro',
+        icon: '🔥',
+        apply: (player) => {
+          player.hasFrenzy = true;
+          player.spreadMultiplier *= 1.35;
+        }
+      }
+    ];
+
+    // Input Controller
+    const keys = {};
+    const mouse = {
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+      isDown: false
+    };
+
+    window.addEventListener('keydown', (e) => {
+      keys[e.key.toLowerCase()] = true;
+      keys[e.code] = true;
+      if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+        e.preventDefault();
+      }
+      if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') {
+        game.togglePause();
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      keys[e.key.toLowerCase()] = false;
+      keys[e.code] = false;
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      mouse.x = (e.clientX - rect.left) * scaleX;
+      mouse.y = (e.clientY - rect.top) * scaleY;
+    });
+
+    canvas.addEventListener('mousedown', (e) => {
+      sound.init();
+      if (e.button === 0) mouse.isDown = true;
+      if (e.button === 2) {
+        // Right click dash
+        e.preventDefault();
+        if (game.player) game.player.triggerDash();
+      }
+    });
+
+    canvas.addEventListener('mouseup', (e) => {
+      if (e.button === 0) mouse.isDown = false;
+    });
+
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    // --- PARTICLE & FLOATING TEXT SYSTEMS ---
+    class Particle {
+      constructor(x, y, color, vx, vy, size = 3, life = 0.5, isFeather = false) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.vx = vx;
+        this.vy = vy;
+        this.size = size;
+        this.life = life;
+        this.maxLife = life;
+        this.isFeather = isFeather;
+        this.angle = Math.random() * Math.PI * 2;
+        this.vAngle = (Math.random() - 0.5) * 6;
+      }
+
+      update(dt) {
+        this.x += this.vx * dt * 60;
+        this.y += this.vy * dt * 60;
+        this.vx *= 0.94;
+        this.vy *= 0.94;
+        if (this.isFeather) {
+          this.vy += 0.05; // Gentle flutter fall
+          this.angle += this.vAngle * dt;
+        }
+        this.life -= dt;
+      }
+
+      draw(ctx) {
+        const alpha = Math.max(0, this.life / this.maxLife);
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.translate(this.x, this.y);
+        ctx.fillStyle = this.color;
+
+        if (this.isFeather) {
+          ctx.rotate(this.angle);
+          // Pixel feather shape
+          ctx.fillRect(-this.size, -this.size / 2, this.size * 2, this.size);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(-this.size + 1, -1, this.size, 1);
+        } else {
+          ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+        }
+        ctx.restore();
+      }
+    }
+
+    class FloatingText {
+      constructor(text, x, y, color = '#fff', size = 10) {
+        this.text = text;
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.size = size;
+        this.life = 0.8;
+        this.vy = -1.2;
+      }
+
+      update(dt) {
+        this.y += this.vy * dt * 60;
+        this.life -= dt;
+      }
+
+      draw(ctx) {
+        const alpha = Math.max(0, this.life / 0.8);
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.font = `${this.size}px 'Press Start 2P', monospace`;
+        ctx.fillStyle = '#000';
+        ctx.fillText(this.text, this.x + 1, this.y + 1);
+        ctx.fillStyle = this.color;
+        ctx.fillText(this.text, this.x, this.y);
+        ctx.restore();
+      }
+    }
+
+    // --- PROJECTILES ---
+    class Projectile {
+      constructor(x, y, vx, vy, options = {}) {
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.damage = options.damage || 1;
+        this.isPlayer = options.isPlayer !== undefined ? options.isPlayer : true;
+        this.radius = options.radius || 4;
+        this.life = options.life || 2.2;
+        this.pierce = options.pierce || 0;
+        this.explosive = options.explosive || false;
+        this.homing = options.homing || false;
+        this.type = options.type || 'millet';
+        this.splits = options.splits || false;
+        this.hasSplit = false;
+        this.hitEntities = new Set();
+        this.toRemove = false;
+      }
+
+      update(dt, enemies, player) {
+        // Homing behavior
+        if (this.homing && this.isPlayer && enemies.length > 0) {
+          let closest = null;
+          let minDist = 300;
+          for (const e of enemies) {
+            const d = Math.hypot(e.x - this.x, e.y - this.y);
+            if (d < minDist) {
+              minDist = d;
+              closest = e;
+            }
+          }
+          if (closest) {
+            const angleTo = Math.atan2(closest.y - this.y, closest.x - this.x);
+            const currentSpeed = Math.hypot(this.vx, this.vy);
+            const currentAngle = Math.atan2(this.vy, this.vx);
+            let diff = angleTo - currentAngle;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            const newAngle = currentAngle + Math.sign(diff) * Math.min(Math.abs(diff), 4 * dt);
+            this.vx = Math.cos(newAngle) * currentSpeed;
+            this.vy = Math.sin(newAngle) * currentSpeed;
+          }
+        }
+
+        this.x += this.vx * dt * 60;
+        this.y += this.vy * dt * 60;
+        this.life -= dt;
+
+        if (this.life <= 0) {
+          this.toRemove = true;
+          if (this.splits && !this.hasSplit) {
+            this.hasSplit = true;
+            game.spawnFruitSplit(this.x, this.y);
+          }
+        }
+
+        // Arena boundary collision
+        if (
+          this.x < ARENA.x ||
+          this.x > ARENA.x + ARENA.w ||
+          this.y < ARENA.y ||
+          this.y > ARENA.y + ARENA.h
+        ) {
+          this.toRemove = true;
+          if (this.splits && !this.hasSplit) {
+            this.hasSplit = true;
+            game.spawnFruitSplit(this.x, this.y);
+          }
+          game.spawnImpactDust(this.x, this.y, '#e5e7eb');
+        }
+      }
+
+      draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        const angle = Math.atan2(this.vy, this.vx);
+        ctx.rotate(angle);
+
+        let spr = Sprites.seeds.millet;
+        if (this.type === 'chili') spr = Sprites.seeds.chili;
+        else if (this.type === 'sunflower') spr = Sprites.seeds.sunflower;
+        else if (this.type === 'enemy') spr = Sprites.seeds.enemy;
+        else if (this.type === 'acai') spr = Sprites.seeds.acai;
+        else if (this.type === 'splinter') spr = Sprites.seeds.splinter;
+        else if (this.type === 'sonic') spr = Sprites.seeds.sonic;
+        else if (this.type === 'miasma') spr = Sprites.seeds.miasma;
+
+        if (this.type === 'sonic') {
+          const expand = 1.0 + (1.0 - Math.max(0, this.life / 3.0)) * 1.4;
+          ctx.scale(expand, expand);
+        }
+
+        ctx.drawImage(spr, -spr.width / 2, -spr.height / 2);
+        ctx.restore();
+      }
+    }
+
+    // --- PLAYER (Calopsita) ---
+    class Player {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = 12;
+        this.speed = 3.6;
+        this.maxHp = 6; // Base 3 full hearts (2 HP per heart)
+        this.hp = 6;
+        this.fireCooldown = 0;
+        this.fireRate = 0.22; // Seconds between shots
+        this.multishot = 1;
+        this.damageMultiplier = 1.0;
+        this.piercing = 0;
+        this.explosiveSeeds = false;
+        this.homing = false;
+        this.babyCompanions = 0;
+
+        // Custom card multipliers & traits
+        this.projectileSpeedMultiplier = 1.0;
+        this.projectileRadiusMultiplier = 1.0;
+        this.invulnerableDurationMultiplier = 1.0;
+        this.spreadMultiplier = 1.0;
+        this.hasTerritorialScreech = false;
+        this.screechTimer = 0;
+        this.hasFrenzy = false;
+        this.frenzyStacks = 0;
+        this.frenzyTimer = 0;
+
+        // Dash / Esquiva
+        this.isDashing = false;
+        this.dashTimer = 0;
+        this.dashDuration = 0.16;
+        this.dashCooldown = 0;
+        this.dashCooldownMax = 1.2;
+        this.dashSpeed = 9.5;
+        this.dashVx = 0;
+        this.dashVy = 0;
+
+        // Shield
+        this.hasShield = false;
+        this.shieldReady = false;
+        this.shieldTimer = 0;
+
+        // Visuals
+        this.invulnerableTimer = 0;
+        this.animFrame = 0;
+        this.animTimer = 0;
+        this.facing = 1; // 1 right, -1 left
+        this.crestUp = false;
+        this.afterimages = [];
+      }
+
+      triggerDash() {
+        if (this.dashCooldown <= 0 && !this.isDashing) {
+          let moveX = 0;
+          let moveY = 0;
+          if (keys['w'] || keys['arrowup']) moveY -= 1;
+          if (keys['s'] || keys['arrowdown']) moveY += 1;
+          if (keys['a'] || keys['arrowleft']) moveX -= 1;
+          if (keys['d'] || keys['arrowright']) moveX += 1;
+
+          if (moveX === 0 && moveY === 0) {
+            // Dash towards mouse if stationary
+            const angle = Math.atan2(mouse.y - this.y, mouse.x - this.x);
+            moveX = Math.cos(angle);
+            moveY = Math.sin(angle);
+          } else {
+            const len = Math.hypot(moveX, moveY);
+            moveX /= len;
+            moveY /= len;
+          }
+
+          this.isDashing = true;
+          this.dashTimer = this.dashDuration;
+          this.dashCooldown = this.dashCooldownMax;
+          this.dashVx = moveX * this.dashSpeed;
+          this.dashVy = moveY * this.dashSpeed;
+          this.invulnerableTimer = (this.dashDuration + 0.05) * this.invulnerableDurationMultiplier;
+          sound.dash();
+
+          // Spawn yellow feather puff
+          game.spawnFeatherBurst(this.x, this.y, ['#fde047', '#facc15', '#ffffff'], 6);
+        }
+      }
+
+      takeDamage(amount) {
+        if (this.invulnerableTimer > 0 || this.isDashing) return false;
+
+        // Check shield
+        if (this.hasShield && this.shieldReady) {
+          this.shieldReady = false;
+          this.shieldTimer = 8.0; // Recarga escudo em 8s
+          this.invulnerableTimer = 0.5 * this.invulnerableDurationMultiplier;
+          sound.dash();
+          game.floatingTexts.push(new FloatingText('BLOQUEADO!', this.x - 20, this.y - 20, '#38bdf8', 9));
+          game.spawnFeatherBurst(this.x, this.y, ['#38bdf8', '#bae6fd'], 8);
+          return false;
+        }
+
+        this.hp -= amount;
+        this.invulnerableTimer = 1.0 * this.invulnerableDurationMultiplier;
+        game.screenShake(10, 0.25);
+        sound.playerHurt();
+
+        // Blood / feather splat
+        game.spawnFeatherBurst(this.x, this.y, ['#facc15', '#ea580c', '#ffffff', '#ef4444'], 10);
+        const dmgText = amount % 1 === 0 ? amount.toFixed(0) : amount.toFixed(1);
+        game.floatingTexts.push(new FloatingText(`-${dmgText}`, this.x, this.y - 18, '#ef4444', 12));
+
+        if (this.hp <= 0) {
+          this.hp = 0;
+          game.gameOver();
+        }
+        return true;
+      }
+
+      update(dt) {
+        // Timers
+        if (this.fireCooldown > 0) this.fireCooldown -= dt;
+        if (this.dashCooldown > 0) this.dashCooldown -= dt;
+        if (this.invulnerableTimer > 0) this.invulnerableTimer -= dt;
+
+        // Shield recharge
+        if (this.hasShield && !this.shieldReady) {
+          this.shieldTimer -= dt;
+          if (this.shieldTimer <= 0) {
+            this.shieldReady = true;
+            sound.powerup();
+            game.floatingTexts.push(new FloatingText('ESCUDO PRONTO!', this.x - 30, this.y - 22, '#38bdf8', 8));
+          }
+        }
+
+        // Frenzy decay
+        if (this.hasFrenzy && this.frenzyTimer > 0) {
+          this.frenzyTimer -= dt;
+          if (this.frenzyTimer <= 0) {
+            this.frenzyStacks = 0;
+          }
+        }
+
+        // Territorial Screech
+        if (this.hasTerritorialScreech) {
+          this.screechTimer = (this.screechTimer || 0) + dt;
+          if (this.screechTimer >= 8.0) {
+            this.screechTimer = 0;
+            sound.hawkScreech();
+            game.screenShake(6, 0.25);
+            game.floatingTexts.push(new FloatingText('PIADO TERRITORIAL!', this.x - 45, this.y - 28, '#facc15', 9));
+            game.spawnFeatherBurst(this.x, this.y, ['#fde047', '#facc15', '#ffffff'], 12);
+            for (const e of game.enemies) {
+              const d = Math.hypot(e.x - this.x, e.y - this.y);
+              if (d < 240) {
+                e.stunTimer = 1.6;
+                const pushAng = Math.atan2(e.y - this.y, e.x - this.x);
+                e.x += Math.cos(pushAng) * 40;
+                e.y += Math.sin(pushAng) * 40;
+                game.spawnImpactDust(e.x, e.y, '#fde047');
+              }
+            }
+          }
+        }
+
+        // Dash movement
+        if (this.isDashing) {
+          this.dashTimer -= dt;
+          this.x += this.dashVx * dt * 60;
+          this.y += this.dashVy * dt * 60;
+
+          // Ghost trail
+          if (Math.random() < 0.6) {
+            this.afterimages.push({
+              x: this.x,
+              y: this.y,
+              facing: this.facing,
+              alpha: 0.6
+            });
+          }
+
+          if (this.dashTimer <= 0) {
+            this.isDashing = false;
+          }
+        } else {
+          // Standard WASD movement
+          let dx = 0;
+          let dy = 0;
+          if (keys['w'] || keys['arrowup']) dy -= 1;
+          if (keys['s'] || keys['arrowdown']) dy += 1;
+          if (keys['a'] || keys['arrowleft']) dx -= 1;
+          if (keys['d'] || keys['arrowright']) dx += 1;
+
+          if (dx !== 0 && dy !== 0) {
+            const diag = 0.7071;
+            dx *= diag;
+            dy *= diag;
+          }
+
+          this.x += dx * this.speed * dt * 60;
+          this.y += dy * this.speed * dt * 60;
+
+          // Facing direction follows mouse
+          this.facing = mouse.x >= this.x ? 1 : -1;
+
+          // Animation
+          if (dx !== 0 || dy !== 0) {
+            this.animTimer += dt * 10;
+            this.animFrame = Math.floor(this.animTimer) % 2;
+          } else {
+            this.animFrame = 0;
+          }
+
+          // Trigger Dash with Shift or Space if space isn't held for firing
+          if (keys['shift'] || keys['shiftleft'] || keys['shiftright']) {
+            this.triggerDash();
+          }
+        }
+
+        // Clamp inside Arena
+        const minX = ARENA.x + this.radius + 6;
+        const maxX = ARENA.x + ARENA.w - this.radius - 6;
+        const minY = ARENA.y + this.radius + 6;
+        const maxY = ARENA.y + ARENA.h - this.radius - 6;
+        this.x = Math.max(minX, Math.min(maxX, this.x));
+        this.y = Math.max(minY, Math.min(maxY, this.y));
+
+        // Shooting input
+        const wantsToShoot = mouse.isDown || keys[' '] || keys['space'];
+        if (wantsToShoot && this.fireCooldown <= 0 && !this.isDashing) {
+          this.shoot();
+        }
+
+        // Update afterimages
+        for (let i = this.afterimages.length - 1; i >= 0; i--) {
+          this.afterimages[i].alpha -= dt * 3.5;
+          if (this.afterimages[i].alpha <= 0) {
+            this.afterimages.splice(i, 1);
+          }
+        }
+      }
+
+      shoot() {
+        const frenzySpeedBonus = this.hasFrenzy && this.frenzyStacks > 0 ? Math.max(0.5, 1 - this.frenzyStacks * 0.05) : 1;
+        this.fireCooldown = this.fireRate * frenzySpeedBonus;
+        this.crestUp = true;
+        setTimeout(() => { this.crestUp = false; }, 120);
+
+        const angle = Math.atan2(mouse.y - this.y, mouse.x - this.x);
+        const speed = 7.8 * this.projectileSpeedMultiplier;
+        const spreadAngle = 0.18 * this.spreadMultiplier; // Radians
+        const baseDmg = 1.0 * this.damageMultiplier;
+        const pRadius = 5 * this.projectileRadiusMultiplier;
+
+        sound.shoot();
+        game.stats.shots++;
+
+        // Multiple projectiles handling
+        const count = this.multishot;
+        const startOffset = -((count - 1) / 2) * spreadAngle;
+
+        for (let i = 0; i < count; i++) {
+          const shootAngle = angle + startOffset + i * spreadAngle + (Math.random() - 0.5) * (0.05 * this.spreadMultiplier);
+          const vx = Math.cos(shootAngle) * speed;
+          const vy = Math.sin(shootAngle) * speed;
+
+          let seedType = 'millet';
+          if (this.explosiveSeeds) seedType = 'chili';
+          else if (this.piercing > 0) seedType = 'sunflower';
+
+          game.projectiles.push(
+            new Projectile(this.x + Math.cos(angle) * 12, this.y + Math.sin(angle) * 12, vx, vy, {
+              damage: baseDmg,
+              isPlayer: true,
+              pierce: this.piercing,
+              explosive: this.explosiveSeeds,
+              homing: this.homing,
+              type: seedType,
+              radius: pRadius
+            })
+          );
+        }
+      }
+
+      draw(ctx) {
+        // Draw Afterimages
+        for (const img of this.afterimages) {
+          ctx.save();
+          ctx.globalAlpha = img.alpha * 0.45;
+          ctx.translate(img.x, img.y);
+          ctx.scale(img.facing, 1);
+          ctx.drawImage(Sprites.player[0], -14, -14);
+          ctx.restore();
+        }
+
+        // Draw Shield aura if active
+        if (this.hasShield && this.shieldReady) {
+          ctx.save();
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, 20 + Math.sin(Date.now() * 0.008) * 2, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // Draw Player Cockatiel
+        ctx.save();
+        ctx.translate(this.x, this.y);
+
+        // Invulnerability flicker
+        if (this.invulnerableTimer > 0 && Math.floor(Date.now() / 60) % 2 === 0) {
+          ctx.globalAlpha = 0.4;
+        }
+
+        ctx.scale(this.facing, 1);
+        const spr = Sprites.player[this.animFrame];
+        ctx.drawImage(spr, -14, -14);
+
+        ctx.restore();
+
+        // Draw Baby Cockatiel Companions orbiting
+        if (this.babyCompanions > 0) {
+          const time = Date.now() * 0.003;
+          for (let i = 0; i < this.babyCompanions; i++) {
+            const orbAngle = time + (i * (Math.PI * 2) / this.babyCompanions);
+            const bx = this.x + Math.cos(orbAngle) * 32;
+            const by = this.y + Math.sin(orbAngle) * 32;
+
+            ctx.save();
+            ctx.translate(bx, by);
+            ctx.drawImage(Sprites.baby, -8, -8);
+            ctx.restore();
+          }
+        }
+      }
+    }
+
+    // --- ENEMY BASE CLASS & SPECIES ---
+    class Enemy {
+      constructor(x, y, options = {}) {
+        this.x = x;
+        this.y = y;
+        this.maxHp = options.hp || 3;
+        this.hp = this.maxHp;
+        this.speed = options.speed || 1.8;
+        this.radius = options.radius || 10;
+        this.color = options.color || '#f59e0b';
+        this.feathers = options.feathers || ['#fff'];
+        this.scoreVal = options.score || 100;
+        this.facing = 1;
+        this.animTimer = 0;
+        this.animFrame = 0;
+        this.hitFlash = 0;
+        this.stunTimer = 0;
+        this.toRemove = false;
+        this.species = options.species || 'pardal';
+      }
+
+      takeDamage(amount) {
+        this.hp -= amount;
+        this.hitFlash = 0.12;
+        sound.enemyHit();
+        game.spawnFeatherBurst(this.x, this.y, this.feathers, 5);
+        game.floatingTexts.push(new FloatingText(`${amount.toFixed(0)}`, this.x + (Math.random() - 0.5) * 10, this.y - 12, '#ffea79', 9));
+
+        if (this.hp <= 0) {
+          this.die();
+        }
+      }
+
+      die() {
+        this.toRemove = true;
+        game.stats.kills++;
+        game.addScore(this.scoreVal);
+        sound.enemyHit();
+        game.spawnFeatherBurst(this.x, this.y, this.feathers, 14);
+        game.notifyEnemyDeath(this);
+
+        // Small chance to drop sunflower seed (heal)
+        if (Math.random() < 0.10) {
+          game.spawnDrop(this.x, this.y, 'heal');
+        }
+      }
+
+      updateBase(dt) {
+        if (this.hitFlash > 0) this.hitFlash -= dt;
+        if (this.stunTimer > 0) {
+          this.stunTimer -= dt;
+          return false; // Stunned, pauses movement/action
+        }
+        this.animTimer += dt * 8;
+        this.animFrame = Math.floor(this.animTimer) % 2;
+        return true;
+      }
+
+      drawHpBar(ctx, width = 20, yOffset = 14) {
+        if (this.hp < this.maxHp) {
+          ctx.save();
+          ctx.fillStyle = '#000';
+          ctx.fillRect(this.x - width / 2 - 1, this.y - yOffset - 1, width + 2, 4);
+          ctx.fillStyle = '#ef4444';
+          ctx.fillRect(this.x - width / 2, this.y - yOffset, width, 2);
+          ctx.fillStyle = '#22c55e';
+          const fillW = Math.max(0, (this.hp / this.maxHp) * width);
+          ctx.fillRect(this.x - width / 2, this.y - yOffset, fillW, 2);
+          ctx.restore();
+        }
+      }
+
+      drawStunStars(ctx) {
+        if (this.stunTimer > 0) {
+          ctx.save();
+          ctx.fillStyle = '#facc15';
+          const t = Date.now() * 0.008;
+          for (let s = 0; s < 3; s++) {
+            const ang = t + (s * Math.PI * 2) / 3;
+            const sx = this.x + Math.cos(ang) * (this.radius + 4);
+            const sy = this.y - this.radius - 8 + Math.sin(ang) * 3;
+            ctx.fillRect(sx - 1.5, sy - 1.5, 3, 3);
+          }
+          ctx.restore();
+        }
+      }
+    }
+
+    // 1. PARDAL (Sparrow): Swift, swarming, direct chase
+    class SparrowEnemy extends Enemy {
+      constructor(x, y) {
+        super(x, y, {
+          hp: 2,
+          speed: 2.8 + Math.random() * 0.6,
+          radius: 9,
+          score: 80,
+          feathers: ['#78350f', '#d97706', '#fed7aa'],
+          species: 'sparrow'
+        });
+      }
+
+      update(dt, player) {
+        if (!this.updateBase(dt)) return;
+        const angle = Math.atan2(player.y - this.y, player.x - this.x);
+        this.facing = Math.cos(angle) >= 0 ? 1 : -1;
+
+        // Slight flock separation / wander
+        this.x += Math.cos(angle) * this.speed * dt * 60;
+        this.y += Math.sin(angle) * this.speed * dt * 60;
+      }
+
+      draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.scale(this.facing, 1);
+        const spr = Sprites.sparrow[this.animFrame];
+        ctx.drawImage(spr, -10, -10);
+        ctx.restore();
+        this.drawHpBar(ctx, 16, 12);
+        this.drawStunStars(ctx);
+      }
+    }
+
+    // 2. PAPAGAIO (Parrot): Keeps distance, shoots fruit seeds
+    class ParrotEnemy extends Enemy {
+      constructor(x, y) {
+        super(x, y, {
+          hp: 5,
+          speed: 1.6,
+          radius: 12,
+          score: 180,
+          feathers: ['#16a34a', '#dc2626', '#eab308', '#2563eb'],
+          species: 'parrot'
+        });
+        this.shootTimer = 2.0 + Math.random() * 1.5;
+        this.preferredDist = 200 + Math.random() * 60;
+      }
+
+      update(dt, player) {
+        if (!this.updateBase(dt)) return;
+        const dist = Math.hypot(player.x - this.x, player.y - this.y);
+        const angle = Math.atan2(player.y - this.y, player.x - this.x);
+        this.facing = Math.cos(angle) >= 0 ? 1 : -1;
+
+        // Kite behavior (advance if too far, retreat if too close)
+        if (dist > this.preferredDist + 30) {
+          this.x += Math.cos(angle) * this.speed * dt * 60;
+          this.y += Math.sin(angle) * this.speed * dt * 60;
+        } else if (dist < this.preferredDist - 30) {
+          this.x -= Math.cos(angle) * (this.speed * 0.8) * dt * 60;
+          this.y -= Math.sin(angle) * (this.speed * 0.8) * dt * 60;
+        } else {
+          // Strafe tangentially
+          this.x += -Math.sin(angle) * this.speed * dt * 60;
+          this.y += Math.cos(angle) * this.speed * dt * 60;
+        }
+
+        // Clamp in arena
+        this.x = Math.max(ARENA.x + 20, Math.min(ARENA.x + ARENA.w - 20, this.x));
+        this.y = Math.max(ARENA.y + 20, Math.min(ARENA.y + ARENA.h - 20, this.y));
+
+        // Shoot at player
+        this.shootTimer -= dt;
+        if (this.shootTimer <= 0) {
+          this.shootTimer = 2.4 + Math.random() * 0.8;
+          const shootAngle = Math.atan2(player.y - this.y, player.x - this.x);
+          const pSpeed = 4.2;
+          game.projectiles.push(
+            new Projectile(this.x, this.y, Math.cos(shootAngle) * pSpeed, Math.sin(shootAngle) * pSpeed, {
+              damage: 1,
+              isPlayer: false,
+              type: 'enemy',
+              radius: 4
+            })
+          );
+          sound.enemyHit();
+        }
+      }
+
+      draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.scale(this.facing, 1);
+        const spr = Sprites.parrot[this.animFrame];
+        ctx.drawImage(spr, -13, -13);
+        ctx.restore();
+        this.drawHpBar(ctx, 22, 16);
+        this.drawStunStars(ctx);
+      }
+    }
+
+    // 3. CORUJA (Owl): Tank bird, slow, periodically releases a 360-degree ring of 8 feathers
+    class OwlEnemy extends Enemy {
+      constructor(x, y) {
+        super(x, y, {
+          hp: 12,
+          speed: 1.1,
+          radius: 15,
+          score: 300,
+          feathers: ['#44403c', '#78716c', '#fef08a', '#e7e5e4'],
+          species: 'owl'
+        });
+        this.ringAttackTimer = 3.5;
+      }
+
+      update(dt, player) {
+        if (!this.updateBase(dt)) return;
+        const angle = Math.atan2(player.y - this.y, player.x - this.x);
+        this.facing = Math.cos(angle) >= 0 ? 1 : -1;
+
+        // Slow steady advance
+        this.x += Math.cos(angle) * this.speed * dt * 60;
+        this.y += Math.sin(angle) * this.speed * dt * 60;
+
+        // Radial Ring attack
+        this.ringAttackTimer -= dt;
+        if (this.ringAttackTimer <= 0) {
+          this.ringAttackTimer = 4.0;
+          sound.enemyHit();
+          const count = 8;
+          for (let i = 0; i < count; i++) {
+            const rot = (i * Math.PI * 2) / count;
+            const pSpeed = 2.8;
+            game.projectiles.push(
+              new Projectile(this.x, this.y, Math.cos(rot) * pSpeed, Math.sin(rot) * pSpeed, {
+                damage: 1,
+                isPlayer: false,
+                type: 'enemy',
+                radius: 4,
+                life: 3.5
+              })
+            );
+          }
+          game.spawnFeatherBurst(this.x, this.y, ['#fef08a', '#78716c'], 8);
+        }
+      }
+
+      draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.scale(this.facing, 1);
+        const spr = Sprites.owl[this.animFrame];
+        ctx.drawImage(spr, -16, -16);
+        ctx.restore();
+        this.drawHpBar(ctx, 28, 20);
+        this.drawStunStars(ctx);
+      }
+    }
+
+    // 4. GAVIÃO (Hawk): Circles around, targets player with a red laser line, then performs a high-speed dive bomb
+    class HawkEnemy extends Enemy {
+      constructor(x, y) {
+        super(x, y, {
+          hp: 6,
+          speed: 1.9,
+          radius: 13,
+          score: 250,
+          feathers: ['#3f2e23', '#291e17', '#facc15', '#fef3c7'],
+          species: 'hawk'
+        });
+        this.state = 'stalk'; // stalk -> aim -> dive -> recover
+        this.stateTimer = 2.0 + Math.random();
+        this.targetAngle = 0;
+        this.diveVx = 0;
+        this.diveVy = 0;
+      }
+
+      update(dt, player) {
+        if (!this.updateBase(dt)) return;
+        this.stateTimer -= dt;
+
+        if (this.state === 'stalk') {
+          // Circle around player
+          const angle = Math.atan2(player.y - this.y, player.x - this.x);
+          this.facing = Math.cos(angle) >= 0 ? 1 : -1;
+          const dist = Math.hypot(player.x - this.x, player.y - this.y);
+
+          if (dist > 220) {
+            this.x += Math.cos(angle) * this.speed * dt * 60;
+            this.y += Math.sin(angle) * this.speed * dt * 60;
+          } else {
+            // Circling
+            this.x += -Math.sin(angle) * this.speed * 1.3 * dt * 60;
+            this.y += Math.cos(angle) * this.speed * 1.3 * dt * 60;
+          }
+
+          if (this.stateTimer <= 0) {
+            this.state = 'aim';
+            this.stateTimer = 0.8; // 0.8s telegraphed laser aim
+            sound.hawkScreech();
+          }
+        } else if (this.state === 'aim') {
+          // Locked in place, aiming red telegraph laser
+          this.targetAngle = Math.atan2(player.y - this.y, player.x - this.x);
+          this.facing = Math.cos(this.targetAngle) >= 0 ? 1 : -1;
+
+          if (this.stateTimer <= 0) {
+            this.state = 'dive';
+            this.stateTimer = 0.6;
+            const diveSpeed = 8.5;
+            this.diveVx = Math.cos(this.targetAngle) * diveSpeed;
+            this.diveVy = Math.sin(this.targetAngle) * diveSpeed;
+            game.screenShake(4, 0.15);
+          }
+        } else if (this.state === 'dive') {
+          // Ultra-fast dash
+          this.x += this.diveVx * dt * 60;
+          this.y += this.diveVy * dt * 60;
+
+          if (Math.random() < 0.4) {
+            game.particles.push(new Particle(this.x, this.y, '#f59e0b', 0, 0, 3, 0.3));
+          }
+
+          if (this.stateTimer <= 0) {
+            this.state = 'recover';
+            this.stateTimer = 1.2;
+          }
+        } else if (this.state === 'recover') {
+          // Catch breath
+          if (this.stateTimer <= 0) {
+            this.state = 'stalk';
+            this.stateTimer = 2.5 + Math.random();
+          }
+        }
+
+        // Clamp inside arena
+        this.x = Math.max(ARENA.x + 15, Math.min(ARENA.x + ARENA.w - 15, this.x));
+        this.y = Math.max(ARENA.y + 15, Math.min(ARENA.y + ARENA.h - 15, this.y));
+      }
+
+      draw(ctx) {
+        // Draw Aim telegraph laser if in aim state
+        if (this.state === 'aim') {
+          ctx.save();
+          ctx.strokeStyle = 'rgba(239, 68, 68, 0.7)';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([6, 4]);
+          ctx.beginPath();
+          ctx.moveTo(this.x, this.y);
+          ctx.lineTo(
+            this.x + Math.cos(this.targetAngle) * 500,
+            this.y + Math.sin(this.targetAngle) * 500
+          );
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.scale(this.facing, 1);
+        const spr = Sprites.hawk[this.state === 'dive' ? 1 : this.animFrame];
+        ctx.drawImage(spr, -15, -15);
+        ctx.restore();
+
+        this.drawHpBar(ctx, 24, 18);
+        this.drawStunStars(ctx);
+      }
+    }
+
+    // 5. BEIJA-FLOR (Hummingbird): Tiny, hyper-fast, zips around, hovers with needle aim, then darts forward!
+    class HummingbirdEnemy extends Enemy {
+      constructor(x, y) {
+        super(x, y, {
+          hp: 2,
+          speed: 3.4,
+          radius: 8,
+          score: 150,
+          feathers: ['#10b981', '#34d399', '#db2777', '#f472b6'],
+          species: 'hummingbird'
+        });
+        this.state = 'zip'; // 'zip', 'hover', 'dash'
+        this.timer = 1.2 + Math.random() * 0.8;
+        this.dashVx = 0;
+        this.dashVy = 0;
+      }
+
+      update(dt, player) {
+        if (!this.updateBase(dt)) return;
+        this.timer -= dt;
+
+        if (this.state === 'zip') {
+          // Rapid flutter around player
+          const dist = Math.hypot(player.x - this.x, player.y - this.y);
+          const angle = Math.atan2(player.y - this.y, player.x - this.x);
+          this.facing = Math.cos(angle) >= 0 ? 1 : -1;
+
+          // Erratic sine flutter movement
+          const tangent = angle + Math.PI / 2;
+          const wobble = Math.sin(Date.now() * 0.012) * 2.0;
+          this.x += (Math.cos(angle) * (dist > 140 ? 1 : -0.5) + Math.cos(tangent) * wobble) * this.speed * dt * 60;
+          this.y += (Math.sin(angle) * (dist > 140 ? 1 : -0.5) + Math.sin(tangent) * wobble) * this.speed * dt * 60;
+
+          if (this.timer <= 0) {
+            this.state = 'hover';
+            this.timer = 0.4; // brief hover telegraph
+            sound.hummingDart();
+          }
+        } else if (this.state === 'hover') {
+          // Lock needle beak towards player
+          const angle = Math.atan2(player.y - this.y, player.x - this.x);
+          this.facing = Math.cos(angle) >= 0 ? 1 : -1;
+          this.x += (Math.random() - 0.5) * 1.5;
+          this.y += (Math.random() - 0.5) * 1.5;
+
+          if (this.timer <= 0) {
+            this.state = 'dash';
+            this.timer = 0.35;
+            const dashSpeed = 9.0;
+            this.dashVx = Math.cos(angle) * dashSpeed;
+            this.dashVy = Math.sin(angle) * dashSpeed;
+            game.spawnFeatherBurst(this.x, this.y, ['#34d399', '#f472b6'], 4);
+          }
+        } else if (this.state === 'dash') {
+          this.x += this.dashVx * dt * 60;
+          this.y += this.dashVy * dt * 60;
+          if (this.timer <= 0) {
+            this.state = 'zip';
+            this.timer = 1.4 + Math.random();
+          }
+        }
+
+        this.x = Math.max(ARENA.x + 12, Math.min(ARENA.x + ARENA.w - 12, this.x));
+        this.y = Math.max(ARENA.y + 12, Math.min(ARENA.y + ARENA.h - 12, this.y));
+      }
+
+      draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.scale(this.facing, 1);
+        const spr = Sprites.hummingbird[this.animFrame];
+        ctx.drawImage(spr, -10, -10);
+        ctx.restore();
+        this.drawHpBar(ctx, 16, 12);
+        this.drawStunStars(ctx);
+      }
+    }
+
+    // 6. TUCANO (Toucan): Big colorful beak, fires heavy Açaí fruit that splits into 3 seed shrapnels!
+    class ToucanEnemy extends Enemy {
+      constructor(x, y) {
+        super(x, y, {
+          hp: 8,
+          speed: 1.4,
+          radius: 14,
+          score: 240,
+          feathers: ['#18181b', '#fde047', '#ea580c', '#f8fafc'],
+          species: 'toucan'
+        });
+        this.shootTimer = 2.2 + Math.random();
+      }
+
+      update(dt, player) {
+        if (!this.updateBase(dt)) return;
+        const dist = Math.hypot(player.x - this.x, player.y - this.y);
+        const angle = Math.atan2(player.y - this.y, player.x - this.x);
+        this.facing = Math.cos(angle) >= 0 ? 1 : -1;
+
+        // Maintains safe distance (around 220px)
+        if (dist > 250) {
+          this.x += Math.cos(angle) * this.speed * dt * 60;
+          this.y += Math.sin(angle) * this.speed * dt * 60;
+        } else if (dist < 180) {
+          this.x -= Math.cos(angle) * (this.speed * 0.9) * dt * 60;
+          this.y -= Math.sin(angle) * (this.speed * 0.9) * dt * 60;
+        } else {
+          // Tangential patrol
+          this.x += -Math.sin(angle) * this.speed * dt * 60;
+          this.y += Math.cos(angle) * this.speed * dt * 60;
+        }
+
+        this.x = Math.max(ARENA.x + 20, Math.min(ARENA.x + ARENA.w - 20, this.x));
+        this.y = Math.max(ARENA.y + 20, Math.min(ARENA.y + ARENA.h - 20, this.y));
+
+        this.shootTimer -= dt;
+        if (this.shootTimer <= 0) {
+          this.shootTimer = 2.8 + Math.random() * 0.8;
+          sound.toucanShot();
+          const shootAngle = Math.atan2(player.y - this.y, player.x - this.x);
+          const pSpeed = 4.0;
+          game.projectiles.push(
+            new Projectile(this.x, this.y, Math.cos(shootAngle) * pSpeed, Math.sin(shootAngle) * pSpeed, {
+              damage: 1,
+              isPlayer: false,
+              type: 'acai',
+              radius: 6,
+              life: 1.3,
+              splits: true
+            })
+          );
+          game.floatingTexts.push(new FloatingText('AÇAÍ!', this.x - 12, this.y - 18, '#c084fc', 8));
+        }
+      }
+
+      draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.scale(this.facing, 1);
+        const spr = Sprites.toucan[this.animFrame];
+        ctx.drawImage(spr, -15, -15);
+        ctx.restore();
+        this.drawHpBar(ctx, 24, 18);
+        this.drawStunStars(ctx);
+      }
+    }
+
+    // 7. URUBU (Black Vulture): Scavenger, leaves toxic purple miasma, enrages when other birds die!
+    class VultureEnemy extends Enemy {
+      constructor(x, y) {
+        super(x, y, {
+          hp: 10,
+          speed: 1.3,
+          radius: 16,
+          score: 280,
+          feathers: ['#18181b', '#3f3f46', '#71717a', '#7f1d1d'],
+          species: 'vulture'
+        });
+        this.miasmaTimer = 0.5;
+        this.frenzyTimer = 0;
+      }
+
+      onScavenge() {
+        this.frenzyTimer = 2.5;
+        this.hp = Math.min(this.maxHp, this.hp + 1);
+        sound.vultureCroak();
+        game.floatingTexts.push(new FloatingText('CARNIÇA! +VEL', this.x - 25, this.y - 20, '#c084fc', 8));
+      }
+
+      update(dt, player) {
+        if (!this.updateBase(dt)) return;
+        if (this.frenzyTimer > 0) this.frenzyTimer -= dt;
+
+        const currentSpeed = this.speed * (this.frenzyTimer > 0 ? 1.6 : 1.0);
+        const angle = Math.atan2(player.y - this.y, player.x - this.x);
+        this.facing = Math.cos(angle) >= 0 ? 1 : -1;
+
+        this.x += Math.cos(angle) * currentSpeed * dt * 60;
+        this.y += Math.sin(angle) * currentSpeed * dt * 60;
+
+        // Leave toxic miasma cloud hazard behind
+        this.miasmaTimer -= dt;
+        if (this.miasmaTimer <= 0) {
+          this.miasmaTimer = 0.6;
+          game.hazards.push(new Hazard(this.x, this.y, 14, 3.0, 0.5));
+        }
+
+        this.x = Math.max(ARENA.x + 20, Math.min(ARENA.x + ARENA.w - 20, this.x));
+        this.y = Math.max(ARENA.y + 20, Math.min(ARENA.y + ARENA.h - 20, this.y));
+      }
+
+      draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.scale(this.facing, 1);
+        if (this.frenzyTimer > 0) {
+          ctx.shadowColor = '#ef4444';
+          ctx.shadowBlur = 8;
+        }
+        const spr = Sprites.vulture[this.animFrame];
+        ctx.drawImage(spr, -16, -16);
+        ctx.restore();
+        this.drawHpBar(ctx, 26, 20);
+        this.drawStunStars(ctx);
+      }
+    }
+
+    // 8. PICA-PAU (Woodpecker): Fires rapid machine-peck bursts of 3 sharp wood splinters!
+    class WoodpeckerEnemy extends Enemy {
+      constructor(x, y) {
+        super(x, y, {
+          hp: 5,
+          speed: 2.1,
+          radius: 12,
+          score: 210,
+          feathers: ['#dc2626', '#f8fafc', '#1e293b'],
+          species: 'woodpecker'
+        });
+        this.attackTimer = 2.4 + Math.random();
+        this.isPecking = false;
+        this.peckCount = 0;
+        this.peckInterval = 0;
+        this.targetAngle = 0;
+      }
+
+      update(dt, player) {
+        if (!this.updateBase(dt)) return;
+        const dist = Math.hypot(player.x - this.x, player.y - this.y);
+        const angle = Math.atan2(player.y - this.y, player.x - this.x);
+        this.facing = Math.cos(angle) >= 0 ? 1 : -1;
+
+        if (!this.isPecking) {
+          if (dist > 180) {
+            this.x += Math.cos(angle) * this.speed * dt * 60;
+            this.y += Math.sin(angle) * this.speed * dt * 60;
+          } else {
+            this.x += -Math.sin(angle) * this.speed * dt * 60;
+            this.y += Math.cos(angle) * this.speed * dt * 60;
+          }
+
+          this.attackTimer -= dt;
+          if (this.attackTimer <= 0) {
+            this.isPecking = true;
+            this.peckCount = 3;
+            this.peckInterval = 0.08;
+            this.targetAngle = Math.atan2(player.y - this.y, player.x - this.x);
+            sound.woodpeckerTap();
+          }
+        } else {
+          this.peckInterval -= dt;
+          if (this.peckInterval <= 0 && this.peckCount > 0) {
+            this.peckCount--;
+            this.peckInterval = 0.12;
+            const pSpeed = 6.2;
+            game.projectiles.push(
+              new Projectile(this.x, this.y, Math.cos(this.targetAngle) * pSpeed, Math.sin(this.targetAngle) * pSpeed, {
+                damage: 1,
+                isPlayer: false,
+                type: 'splinter',
+                radius: 4,
+                life: 2.0
+              })
+            );
+            sound.woodpeckerTap();
+            game.spawnImpactDust(this.x, this.y, '#f59e0b');
+
+            if (this.peckCount <= 0) {
+              this.isPecking = false;
+              this.attackTimer = 2.6 + Math.random() * 0.8;
+            }
+          }
+        }
+
+        this.x = Math.max(ARENA.x + 18, Math.min(ARENA.x + ARENA.w - 18, this.x));
+        this.y = Math.max(ARENA.y + 18, Math.min(ARENA.y + ARENA.h - 18, this.y));
+      }
+
+      draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.scale(this.facing, 1);
+        const spr = Sprites.woodpecker[this.isPecking ? 1 : this.animFrame];
+        ctx.drawImage(spr, -12, -12);
+        ctx.restore();
+        this.drawHpBar(ctx, 20, 16);
+        this.drawStunStars(ctx);
+      }
+    }
+
+    // 9. BEM-TE-VI (Great Kiskadee): Sings signature melodic call and unleashes sonic shockwave ring!
+    class BemteviEnemy extends Enemy {
+      constructor(x, y) {
+        super(x, y, {
+          hp: 6,
+          speed: 2.3,
+          radius: 12,
+          score: 230,
+          feathers: ['#facc15', '#854d0e', '#f8fafc', '#18181b'],
+          species: 'bemtevi'
+        });
+        this.singTimer = 3.0 + Math.random();
+        this.diveTimer = 1.5;
+        this.isDiving = false;
+        this.diveVx = 0;
+        this.diveVy = 0;
+      }
+
+      update(dt, player) {
+        if (!this.updateBase(dt)) return;
+        const dist = Math.hypot(player.x - this.x, player.y - this.y);
+        const angle = Math.atan2(player.y - this.y, player.x - this.x);
+        this.facing = Math.cos(angle) >= 0 ? 1 : -1;
+
+        // Signature singing attack
+        this.singTimer -= dt;
+        if (this.singTimer <= 0) {
+          this.singTimer = 4.2 + Math.random() * 1.0;
+          sound.bemteviCall();
+          game.floatingTexts.push(new FloatingText('BEM-TE-VI! 🎶', this.x - 30, this.y - 20, '#fde047', 9));
+          const ringCount = 6;
+          for (let i = 0; i < ringCount; i++) {
+            const rot = (i * Math.PI * 2) / ringCount;
+            const pSpeed = 2.6;
+            game.projectiles.push(
+              new Projectile(this.x, this.y, Math.cos(rot) * pSpeed, Math.sin(rot) * pSpeed, {
+                damage: 1,
+                isPlayer: false,
+                type: 'sonic',
+                radius: 5,
+                life: 3.0
+              })
+            );
+          }
+        }
+
+        // Dive flycatcher movement
+        this.diveTimer -= dt;
+        if (this.diveTimer <= 0) {
+          if (!this.isDiving) {
+            this.isDiving = true;
+            this.diveTimer = 0.5;
+            const diveSpeed = 5.2;
+            this.diveVx = Math.cos(angle) * diveSpeed;
+            this.diveVy = Math.sin(angle) * diveSpeed;
+          } else {
+            this.isDiving = false;
+            this.diveTimer = 2.0 + Math.random();
+          }
+        }
+
+        if (this.isDiving) {
+          this.x += this.diveVx * dt * 60;
+          this.y += this.diveVy * dt * 60;
+        } else {
+          this.x += (Math.cos(angle) * 0.7 - Math.sin(angle) * 0.9) * this.speed * dt * 60;
+          this.y += (Math.sin(angle) * 0.7 + Math.cos(angle) * 0.9) * this.speed * dt * 60;
+        }
+
+        this.x = Math.max(ARENA.x + 16, Math.min(ARENA.x + ARENA.w - 16, this.x));
+        this.y = Math.max(ARENA.y + 16, Math.min(ARENA.y + ARENA.h - 16, this.y));
+      }
+
+      draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.scale(this.facing, 1);
+        const spr = Sprites.bemtevi[this.animFrame];
+        ctx.drawImage(spr, -12, -12);
+        ctx.restore();
+        this.drawHpBar(ctx, 22, 16);
+        this.drawStunStars(ctx);
+      }
+    }
+
+    // 10. BOSS: POMBO REI (King Pigeon)
+    class BossPigeon extends Enemy {
+      constructor(x, y) {
+        super(x, y, {
+          hp: 85,
+          speed: 1.2,
+          radius: 24,
+          score: 1500,
+          feathers: ['#64748b', '#94a3b8', '#059669', '#9333ea', '#facc15'],
+          species: 'boss'
+        });
+        this.phaseTimer = 0;
+        this.spiralAngle = 0;
+        this.attackMode = 'spiral'; // spiral, charge, bomb
+        this.modeTimer = 4.0;
+      }
+
+      update(dt, player) {
+        this.updateBase(dt);
+        const angle = Math.atan2(player.y - this.y, player.x - this.x);
+        this.facing = Math.cos(angle) >= 0 ? 1 : -1;
+
+        this.modeTimer -= dt;
+        if (this.modeTimer <= 0) {
+          const modes = ['spiral', 'multishot', 'charge'];
+          this.attackMode = modes[Math.floor(Math.random() * modes.length)];
+          this.modeTimer = 4.0;
+        }
+
+        // Behavior according to attackMode
+        if (this.attackMode === 'spiral') {
+          // Slow floating & spiral feather bullets
+          this.x += Math.cos(angle) * (this.speed * 0.7) * dt * 60;
+          this.y += Math.sin(angle) * (this.speed * 0.7) * dt * 60;
+
+          this.spiralAngle += 4.5 * dt;
+          this.phaseTimer += dt;
+          if (this.phaseTimer >= 0.18) {
+            this.phaseTimer = 0;
+            const pSpeed = 3.2;
+            for (let k = 0; k < 2; k++) {
+              const curAng = this.spiralAngle + k * Math.PI;
+              game.projectiles.push(
+                new Projectile(this.x, this.y, Math.cos(curAng) * pSpeed, Math.sin(curAng) * pSpeed, {
+                  damage: 1,
+                  isPlayer: false,
+                  type: 'enemy',
+                  radius: 5
+                })
+              );
+            }
+          }
+        } else if (this.attackMode === 'multishot') {
+          // Advance and shoot shotgun burst at player
+          this.x += Math.cos(angle) * this.speed * dt * 60;
+          this.y += Math.sin(angle) * this.speed * dt * 60;
+
+          this.phaseTimer += dt;
+          if (this.phaseTimer >= 1.2) {
+            this.phaseTimer = 0;
+            sound.enemyHit();
+            const count = 5;
+            for (let i = 0; i < count; i++) {
+              const spread = (i - (count - 1) / 2) * 0.22;
+              const pSpeed = 4.0;
+              game.projectiles.push(
+                new Projectile(this.x, this.y, Math.cos(angle + spread) * pSpeed, Math.sin(angle + spread) * pSpeed, {
+                  damage: 1,
+                  isPlayer: false,
+                  type: 'enemy',
+                  radius: 5
+                })
+              );
+            }
+          }
+        } else if (this.attackMode === 'charge') {
+          // Heavy charge towards player
+          this.x += Math.cos(angle) * (this.speed * 2.5) * dt * 60;
+          this.y += Math.sin(angle) * (this.speed * 2.5) * dt * 60;
+        }
+
+        // Clamp inside arena
+        this.x = Math.max(ARENA.x + 30, Math.min(ARENA.x + ARENA.w - 30, this.x));
+        this.y = Math.max(ARENA.y + 30, Math.min(ARENA.y + ARENA.h - 30, this.y));
+
+        // Update Boss Health Bar
+        const bossBar = document.getElementById('boss-bar-fill');
+        if (bossBar) {
+          const pct = Math.max(0, (this.hp / this.maxHp) * 100);
+          bossBar.style.width = `${pct}%`;
+        }
+      }
+
+      die() {
+        super.die();
+        document.getElementById('boss-bar-container').style.display = 'none';
+        game.screenShake(20, 0.6);
+        sound.explosion();
+        game.spawnFeatherBurst(this.x, this.y, this.feathers, 40);
+        // Guaranteed large heal drop
+        game.spawnDrop(this.x, this.y, 'heal');
+      }
+
+      draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.scale(this.facing, 1);
+        const spr = Sprites.boss[this.animFrame];
+        ctx.drawImage(spr, -24, -24);
+        ctx.restore();
+        this.drawStunStars(ctx);
+      }
+    }
+
+    // --- HAZARDS (Toxic miasma clouds from Urubu) ---
+    class Hazard {
+      constructor(x, y, radius = 14, duration = 3.0, damage = 0.5) {
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.duration = duration;
+        this.maxDuration = duration;
+        this.damage = damage;
+        this.pulse = Math.random() * Math.PI * 2;
+        this.damageCooldown = 0;
+      }
+
+      update(dt, player) {
+        this.duration -= dt;
+        this.pulse += dt * 4;
+        if (this.damageCooldown > 0) this.damageCooldown -= dt;
+
+        const dist = Math.hypot(player.x - this.x, player.y - this.y);
+        if (dist < player.radius + this.radius && this.damageCooldown <= 0) {
+          this.damageCooldown = 0.8;
+          player.takeDamage(this.damage);
+          game.floatingTexts.push(new FloatingText('VENENO!', player.x - 20, player.y - 20, '#a855f7', 8));
+        }
+
+        return this.duration <= 0;
+      }
+
+      draw(ctx) {
+        const alpha = Math.min(0.55, (this.duration / this.maxDuration) * 0.55);
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = '#581c87';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius + Math.sin(this.pulse) * 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#a855f7';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius * 0.5 + Math.cos(this.pulse) * 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // Drops (e.g. Sunflower seed that heals)
+    class Drop {
+      constructor(x, y, type = 'heal') {
+        this.x = x;
+        this.y = y;
+        this.type = type;
+        this.radius = 8;
+        this.life = 15; // 15 seconds to pick up
+        this.pulse = 0;
+      }
+
+      update(dt, player) {
+        this.life -= dt;
+        this.pulse += dt * 5;
+
+        // Magnetism towards player when close
+        const dist = Math.hypot(player.x - this.x, player.y - this.y);
+        if (dist < 80) {
+          const angle = Math.atan2(player.y - this.y, player.x - this.x);
+          this.x += Math.cos(angle) * 3.5 * dt * 60;
+          this.y += Math.sin(angle) * 3.5 * dt * 60;
+        }
+
+        // Collect
+        if (dist < player.radius + this.radius) {
+          if (this.type === 'heal') {
+            player.hp = Math.min(player.maxHp, player.hp + 2);
+            sound.powerup();
+            game.floatingTexts.push(new FloatingText('+VIDA!', this.x, this.y - 10, '#22c55e', 10));
+            game.spawnFeatherBurst(this.x, this.y, ['#22c55e', '#86efac'], 6);
+          }
+          return true;
+        }
+        return this.life <= 0;
+      }
+
+      draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y + Math.sin(this.pulse) * 3);
+        ctx.drawImage(Sprites.seeds.sunflower, -6, -6);
+        ctx.restore();
+      }
+    }
+
+    // --- MAIN GAME MANAGER ---
+    class GameManager {
+      constructor() {
+        this.state = 'START'; // START, PLAYING, UPGRADE, PAUSE, GAMEOVER
+        this.player = null;
+        this.enemies = [];
+        this.projectiles = [];
+        this.particles = [];
+        this.floatingTexts = [];
+        this.drops = [];
+        this.hazards = [];
+        this.props = [];
+
+        // Wave tracking
+        this.wave = 1;
+        this.enemiesToSpawn = 0;
+        this.spawnTimer = 0;
+        this.waveState = 'WAITING'; // SPAWNING, IN_PROGRESS, CLEARED
+        this.score = 0;
+
+        // Stats for Game Over screen
+        this.stats = {
+          waves: 0,
+          kills: 0,
+          shots: 0
+        };
+
+        // Screen Shake
+        this.shakeMag = 0;
+        this.shakeDuration = 0;
+
+        // Active upgrades inventory
+        this.activeUpgrades = [];
+
+        this.lastTime = performance.now();
+        this.generateArenaProps();
+      }
+
+      generateArenaProps() {
+        this.props = [];
+        // Decorative bushes and birdbaths
+        this.props.push({ x: ARENA.x + 60, y: ARENA.y + 60, type: 'bush' });
+        this.props.push({ x: ARENA.x + ARENA.w - 70, y: ARENA.y + 60, type: 'bush' });
+        this.props.push({ x: ARENA.x + 80, y: ARENA.y + ARENA.h - 80, type: 'bush' });
+        this.props.push({ x: ARENA.x + ARENA.w - 80, y: ARENA.y + ARENA.h - 80, type: 'bush' });
+        this.props.push({ x: canvas.width / 2, y: canvas.height / 2, type: 'birdbath' });
+      }
+
+      startRun() {
+        this.player = new Player(canvas.width / 2, canvas.height / 2 + 100);
+        this.enemies = [];
+        this.projectiles = [];
+        this.particles = [];
+        this.floatingTexts = [];
+        this.drops = [];
+        this.hazards = [];
+        this.activeUpgrades = [];
+
+        this.wave = 1;
+        this.score = 0;
+        this.stats = { waves: 0, kills: 0, shots: 0 };
+
+        this.state = 'PLAYING';
+        document.getElementById('screen-start').classList.add('hidden');
+        document.getElementById('screen-gameover').classList.add('hidden');
+        document.getElementById('screen-upgrade').classList.add('hidden');
+        document.getElementById('screen-pause').classList.add('hidden');
+        document.getElementById('boss-bar-container').style.display = 'none';
+
+        this.startWave(1);
+      }
+
+      startWave(num) {
+        this.wave = num;
+        this.waveState = 'SPAWNING';
+        this.spawnTimer = 0.5;
+
+        const isBossWave = num % 5 === 0;
+
+        if (isBossWave) {
+          this.enemiesToSpawn = 1 + Math.floor(num / 5) * 2; // Boss + minions
+          this.showWaveBanner(`ONDA ${num}`, '👑 O REI POMBO DESPERTOU!');
+          document.getElementById('boss-bar-container').style.display = 'flex';
+          const bossBar = document.getElementById('boss-bar-fill');
+          if (bossBar) bossBar.style.width = '100%';
+        } else {
+          this.enemiesToSpawn = 5 + Math.floor(num * 2.4);
+          const subtitles = {
+            1: 'Pardais famintos invadiram o comedouro!',
+            2: 'Bem-te-vis barulhentos entraram na disputa!',
+            3: 'Papagaios atiradores e Beija-flores zunindo!',
+            4: 'Gaviões caçadores e Pica-paus furadeiras!',
+            6: 'Tucanos canhoneiros e Corujas tanques!',
+            7: 'Urubus carniceiros espalham névoa tóxica!',
+            8: 'Tempestade de penas! O bando se reúne!',
+            9: 'Revoada lendária de todas as espécies!'
+          };
+          const sub = subtitles[num] || 'Revoada implacável de pássaros selvagens!';
+          this.showWaveBanner(`ONDA ${num}`, sub);
+        }
+
+        sound.waveComplete();
+      }
+
+      showWaveBanner(title, subtitle) {
+        const banner = document.getElementById('wave-banner');
+        document.getElementById('banner-title').textContent = title;
+        document.getElementById('banner-subtitle').textContent = subtitle;
+        banner.classList.add('active');
+        setTimeout(() => {
+          banner.classList.remove('active');
+        }, 2200);
+      }
+
+      spawnRandomEnemy() {
+        // Spawn around outer border of arena
+        let x, y;
+        if (Math.random() < 0.5) {
+          x = Math.random() < 0.5 ? ARENA.x + 20 : ARENA.x + ARENA.w - 20;
+          y = ARENA.y + Math.random() * ARENA.h;
+        } else {
+          x = ARENA.x + Math.random() * ARENA.w;
+          y = Math.random() < 0.5 ? ARENA.y + 20 : ARENA.y + ARENA.h - 20;
+        }
+
+        const isBossWave = this.wave % 5 === 0;
+        if (isBossWave) {
+          if (!this.enemies.some((e) => e instanceof BossPigeon)) {
+            this.enemies.push(new BossPigeon(canvas.width / 2, ARENA.y + 80));
+            return;
+          }
+          const minionTypes = [SparrowEnemy, HummingbirdEnemy, ParrotEnemy, BemteviEnemy];
+          const Chosen = minionTypes[Math.floor(Math.random() * minionTypes.length)];
+          this.enemies.push(new Chosen(x, y));
+          return;
+        }
+
+        // Enemy pool based on current wave
+        const rand = Math.random();
+        if (this.wave === 1) {
+          // Wave 1: Sparrows (Pardais)
+          this.enemies.push(new SparrowEnemy(x, y));
+        } else if (this.wave === 2) {
+          // Wave 2: Sparrows + Bem-te-vis
+          if (rand < 0.40) this.enemies.push(new BemteviEnemy(x, y));
+          else this.enemies.push(new SparrowEnemy(x, y));
+        } else if (this.wave === 3) {
+          // Wave 3: Sparrows + Parrots + Hummingbirds
+          if (rand < 0.35) this.enemies.push(new HummingbirdEnemy(x, y));
+          else if (rand < 0.70) this.enemies.push(new ParrotEnemy(x, y));
+          else this.enemies.push(new SparrowEnemy(x, y));
+        } else if (this.wave === 4) {
+          // Wave 4: Hawks + Woodpeckers + Bem-te-vis
+          if (rand < 0.30) this.enemies.push(new HawkEnemy(x, y));
+          else if (rand < 0.65) this.enemies.push(new WoodpeckerEnemy(x, y));
+          else this.enemies.push(new BemteviEnemy(x, y));
+        } else if (this.wave === 6) {
+          // Wave 6: Toucans + Owls + Sparrows
+          if (rand < 0.35) this.enemies.push(new ToucanEnemy(x, y));
+          else if (rand < 0.65) this.enemies.push(new OwlEnemy(x, y));
+          else this.enemies.push(new SparrowEnemy(x, y));
+        } else if (this.wave === 7) {
+          // Wave 7: Vultures + Hummingbirds + Hawks
+          if (rand < 0.35) this.enemies.push(new VultureEnemy(x, y));
+          else if (rand < 0.65) this.enemies.push(new HummingbirdEnemy(x, y));
+          else this.enemies.push(new HawkEnemy(x, y));
+        } else if (this.wave === 8) {
+          // Wave 8: Woodpeckers + Toucans + Bem-te-vis + Owls
+          if (rand < 0.25) this.enemies.push(new WoodpeckerEnemy(x, y));
+          else if (rand < 0.50) this.enemies.push(new ToucanEnemy(x, y));
+          else if (rand < 0.75) this.enemies.push(new BemteviEnemy(x, y));
+          else this.enemies.push(new OwlEnemy(x, y));
+        } else {
+          // Wave 9+: Complete avian ecosystem!
+          const speciesPool = [
+            SparrowEnemy,
+            HummingbirdEnemy,
+            ParrotEnemy,
+            BemteviEnemy,
+            WoodpeckerEnemy,
+            HawkEnemy,
+            ToucanEnemy,
+            OwlEnemy,
+            VultureEnemy
+          ];
+          const Chosen = speciesPool[Math.floor(Math.random() * speciesPool.length)];
+          this.enemies.push(new Chosen(x, y));
+        }
+      }
+
+      spawnFeatherBurst(x, y, colors, count = 6) {
+        for (let i = 0; i < count; i++) {
+          const col = colors[Math.floor(Math.random() * colors.length)];
+          const angle = Math.random() * Math.PI * 2;
+          const spd = 1.0 + Math.random() * 3.5;
+          this.particles.push(
+            new Particle(x, y, col, Math.cos(angle) * spd, Math.sin(angle) * spd, 3 + Math.random() * 2, 0.7 + Math.random() * 0.5, true)
+          );
+        }
+      }
+
+      spawnImpactDust(x, y, color = '#cbd5e1') {
+        for (let i = 0; i < 4; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const spd = 0.5 + Math.random() * 1.5;
+          this.particles.push(
+            new Particle(x, y, color, Math.cos(angle) * spd, Math.sin(angle) * spd, 2, 0.3)
+          );
+        }
+      }
+
+      spawnFruitSplit(x, y) {
+        sound.explosion();
+        const count = 3;
+        for (let i = 0; i < count; i++) {
+          const angle = (i * Math.PI * 2) / count + (Math.random() - 0.5) * 0.4;
+          const spd = 3.2;
+          this.projectiles.push(
+            new Projectile(x, y, Math.cos(angle) * spd, Math.sin(angle) * spd, {
+              damage: 1,
+              isPlayer: false,
+              type: 'enemy',
+              radius: 4,
+              life: 1.8
+            })
+          );
+        }
+        for (let k = 0; k < 6; k++) {
+          const a = Math.random() * Math.PI * 2;
+          const s = 1.0 + Math.random() * 2.5;
+          this.particles.push(new Particle(x, y, '#7e22ce', Math.cos(a) * s, Math.sin(a) * s, 3, 0.4));
+        }
+      }
+
+      notifyEnemyDeath(deadEnemy) {
+        for (const e of this.enemies) {
+          if (e instanceof VultureEnemy && e !== deadEnemy && !e.toRemove) {
+            e.onScavenge();
+          }
+        }
+      }
+
+      spawnDrop(x, y, type = 'heal') {
+        this.drops.push(new Drop(x, y, type));
+      }
+
+      screenShake(magnitude = 6, duration = 0.2) {
+        this.shakeMag = magnitude;
+        this.shakeDuration = duration;
+      }
+
+      addScore(pts) {
+        this.score += pts;
+      }
+
+      checkWaveProgress() {
+        if (this.enemiesToSpawn === 0 && this.enemies.length === 0 && this.waveState !== 'CLEARED') {
+          this.waveState = 'CLEARED';
+          this.stats.waves = this.wave;
+          setTimeout(() => {
+            this.openUpgradesModal();
+          }, 800);
+        }
+      }
+
+      openUpgradesModal() {
+        this.state = 'UPGRADE';
+        sound.powerup();
+
+        const container = document.getElementById('cards-container');
+        container.innerHTML = '';
+
+        // Pick 3 random distinct upgrades
+        const poolCopy = [...UPGRADES_POOL];
+        const choices = [];
+        for (let i = 0; i < 3 && poolCopy.length > 0; i++) {
+          const idx = Math.floor(Math.random() * poolCopy.length);
+          choices.push(poolCopy.splice(idx, 1)[0]);
+        }
+
+        choices.forEach((upg) => {
+          const card = document.createElement('div');
+          card.className = 'upgrade-card';
+          card.innerHTML = `
+            <div class="card-icon" style="font-size: 32px;">${upg.icon}</div>
+            <div class="card-tag ${upg.tag}">${upg.tag}</div>
+            <div class="card-title">${upg.title}</div>
+            <div class="card-desc">
+              <div class="card-buff">${upg.buff}</div>
+              <div class="card-debuff">${upg.debuff}</div>
+            </div>
+          `;
+          card.addEventListener('click', () => {
+            this.selectUpgrade(upg);
+          });
+          container.appendChild(card);
+        });
+
+        document.getElementById('screen-upgrade').classList.remove('hidden');
+      }
+
+      selectUpgrade(upgrade) {
+        upgrade.apply(this.player, this);
+        this.activeUpgrades.push(upgrade);
+        document.getElementById('screen-upgrade').classList.add('hidden');
+        this.state = 'PLAYING';
+        this.updateUpgradesBadges();
+        this.startWave(this.wave + 1);
+      }
+
+      updateUpgradesBadges() {
+        const badgeBox = document.getElementById('upgrades-badges');
+        badgeBox.innerHTML = '';
+        this.activeUpgrades.forEach((u) => {
+          const badge = document.createElement('div');
+          badge.className = 'badge-icon';
+          badge.innerHTML = `<span>${u.icon}</span> ${u.title}`;
+          badgeBox.appendChild(badge);
+        });
+      }
+
+      togglePause() {
+        if (this.state === 'PLAYING') {
+          this.state = 'PAUSE';
+          document.getElementById('screen-pause').classList.remove('hidden');
+        } else if (this.state === 'PAUSE') {
+          this.state = 'PLAYING';
+          document.getElementById('screen-pause').classList.add('hidden');
+        }
+      }
+
+      gameOver() {
+        this.state = 'GAMEOVER';
+        sound.gameOver();
+
+        document.getElementById('stat-waves').textContent = this.stats.waves;
+        document.getElementById('stat-kills').textContent = this.stats.kills;
+        document.getElementById('stat-shots').textContent = this.stats.shots;
+        document.getElementById('stat-score').textContent = this.score.toString().padStart(6, '0');
+
+        document.getElementById('screen-gameover').classList.remove('hidden');
+      }
+
+      // --- MAIN UPDATE LOOP ---
+      update(dt) {
+        if (this.state !== 'PLAYING') return;
+
+        // Screen Shake update
+        if (this.shakeDuration > 0) {
+          this.shakeDuration -= dt;
+          if (this.shakeDuration <= 0) this.shakeMag = 0;
+        }
+
+        // Spawning Wave Enemies
+        if (this.waveState === 'SPAWNING') {
+          this.spawnTimer -= dt;
+          if (this.spawnTimer <= 0 && this.enemiesToSpawn > 0) {
+            this.spawnRandomEnemy();
+            this.enemiesToSpawn--;
+            this.spawnTimer = 0.6 + Math.random() * 0.4;
+            if (this.enemiesToSpawn === 0) {
+              this.waveState = 'IN_PROGRESS';
+            }
+          }
+        }
+
+        // Player update
+        this.player.update(dt);
+
+        // Baby companion automatic shooting
+        if (this.player.babyCompanions > 0 && this.enemies.length > 0) {
+          this.babyShootTimer = (this.babyShootTimer || 0) + dt;
+          if (this.babyShootTimer >= 0.5 / this.player.babyCompanions) {
+            this.babyShootTimer = 0;
+            const target = this.enemies[Math.floor(Math.random() * this.enemies.length)];
+            const angle = Math.atan2(target.y - this.player.y, target.x - this.player.x);
+            const spd = 6.0;
+            this.projectiles.push(
+              new Projectile(this.player.x, this.player.y, Math.cos(angle) * spd, Math.sin(angle) * spd, {
+                damage: 0.6 * this.player.damageMultiplier,
+                isPlayer: true,
+                radius: 3,
+                type: 'millet'
+              })
+            );
+          }
+        }
+
+        // Projectiles update
+        for (let i = this.projectiles.length - 1; i >= 0; i--) {
+          const p = this.projectiles[i];
+          p.update(dt, this.enemies, this.player);
+
+          if (p.toRemove) {
+            this.projectiles.splice(i, 1);
+            continue;
+          }
+
+          // Player projectile vs Enemies
+          if (p.isPlayer) {
+            for (let j = this.enemies.length - 1; j >= 0; j--) {
+              const e = this.enemies[j];
+              if (p.hitEntities.has(e)) continue;
+
+              const dist = Math.hypot(e.x - p.x, e.y - p.y);
+              if (dist < e.radius + p.radius) {
+                p.hitEntities.add(e);
+                e.takeDamage(p.damage);
+
+                // Player frenzy stack bonus on hit
+                if (this.player.hasFrenzy) {
+                  this.player.frenzyStacks = Math.min(10, (this.player.frenzyStacks || 0) + 1);
+                  this.player.frenzyTimer = 3.5;
+                }
+
+                // Explosive AoE seed
+                if (p.explosive) {
+                  sound.explosion();
+                  this.screenShake(6, 0.2);
+                  // Explosion visuals
+                  for (let k = 0; k < 12; k++) {
+                    const ang = Math.random() * Math.PI * 2;
+                    const spd = 1.5 + Math.random() * 4;
+                    this.particles.push(
+                      new Particle(p.x, p.y, ['#ef4444', '#f97316', '#fef08a'][Math.floor(Math.random() * 3)], Math.cos(ang) * spd, Math.sin(ang) * spd, 4, 0.4)
+                    );
+                  }
+                  // AoE damage to nearby enemies
+                  for (const other of this.enemies) {
+                    if (other !== e && Math.hypot(other.x - p.x, other.y - p.y) < 55) {
+                      other.takeDamage(p.damage * 0.75);
+                    }
+                  }
+                }
+
+                if (p.pierce <= 0 || p.explosive) {
+                  p.toRemove = true;
+                  break;
+                } else {
+                  p.pierce--;
+                }
+              }
+            }
+          } else {
+            // Enemy projectile vs Player
+            const dist = Math.hypot(this.player.x - p.x, this.player.y - p.y);
+            if (dist < this.player.radius + p.radius) {
+              p.toRemove = true;
+              if (p.splits && !p.hasSplit) {
+                p.hasSplit = true;
+                this.spawnFruitSplit(p.x, p.y);
+              }
+              this.player.takeDamage(p.damage);
+            }
+          }
+        }
+
+        // Enemies update & Enemy-Player body collision
+        for (let i = this.enemies.length - 1; i >= 0; i--) {
+          const e = this.enemies[i];
+          e.update(dt, this.player);
+
+          if (e.toRemove) {
+            this.enemies.splice(i, 1);
+            continue;
+          }
+
+          // Collision with player
+          const dist = Math.hypot(this.player.x - e.x, this.player.y - e.y);
+          if (dist < this.player.radius + e.radius) {
+            this.player.takeDamage(1);
+          }
+        }
+
+        // Hazards update (Urubu toxic miasma)
+        for (let i = this.hazards.length - 1; i >= 0; i--) {
+          if (this.hazards[i].update(dt, this.player)) {
+            this.hazards.splice(i, 1);
+          }
+        }
+
+        // Drops update
+        for (let i = this.drops.length - 1; i >= 0; i--) {
+          if (this.drops[i].update(dt, this.player)) {
+            this.drops.splice(i, 1);
+          }
+        }
+
+        // Particles update
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+          this.particles[i].update(dt);
+          if (this.particles[i].life <= 0) {
+            this.particles.splice(i, 1);
+          }
+        }
+
+        // Floating texts update
+        for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
+          this.floatingTexts[i].update(dt);
+          if (this.floatingTexts[i].life <= 0) {
+            this.floatingTexts.splice(i, 1);
+          }
+        }
+
+        // Wave Progression Check
+        this.checkWaveProgress();
+        this.updateHUD();
+      }
+
+      updateHUD() {
+        // Render Hearts
+        const heartsBox = document.getElementById('hearts-container');
+        heartsBox.innerHTML = '';
+        const totalHearts = Math.ceil(this.player.maxHp / 2);
+        for (let i = 0; i < totalHearts; i++) {
+          const heart = document.createElement('div');
+          heart.className = 'heart-icon';
+          const hpForThisHeart = this.player.hp - i * 2;
+          if (hpForThisHeart >= 1.5) {
+            heart.innerHTML = '❤️';
+          } else if (hpForThisHeart >= 0.5) {
+            heart.innerHTML = '💔';
+          } else {
+            heart.innerHTML = '🖤';
+          }
+          heartsBox.appendChild(heart);
+        }
+
+        // Numeric HP label next to hearts
+        const hpNum = document.createElement('span');
+        hpNum.style.fontSize = '8px';
+        hpNum.style.color = '#ff8080';
+        hpNum.style.marginLeft = '6px';
+        hpNum.style.alignSelf = 'center';
+        hpNum.textContent = `${this.player.hp.toFixed(1)}/${this.player.maxHp.toFixed(1)}`;
+        heartsBox.appendChild(hpNum);
+
+        // Stamina / Dash bar
+        const dashPct = Math.max(0, 1 - (this.player.dashCooldown / this.player.dashCooldownMax)) * 100;
+        document.getElementById('stamina-fill').style.width = `${dashPct}%`;
+
+        // Wave & Enemies
+        document.getElementById('hud-wave-title').textContent = `ONDA ${this.wave}`;
+        const remaining = this.enemiesToSpawn + this.enemies.length;
+        document.getElementById('hud-enemies-left').textContent = `Pássaros: ${remaining}`;
+
+        // Score
+        document.getElementById('hud-score').textContent = this.score.toString().padStart(6, '0');
+      }
+
+      // --- MAIN DRAW PIPELINE ---
+      draw() {
+        ctx.save();
+
+        // Screen Shake offset
+        if (this.shakeMag > 0) {
+          const sx = (Math.random() - 0.5) * this.shakeMag;
+          const sy = (Math.random() - 0.5) * this.shakeMag;
+          ctx.translate(sx, sy);
+        }
+
+        // 1. Draw Arena Floor (Tiled Pixel Grass & Yard)
+        this.drawArena(ctx);
+
+        // 2. Draw Props (Bushes, birdbaths)
+        for (const prop of this.props) {
+          const spr = Sprites.props[prop.type];
+          if (spr) {
+            ctx.drawImage(spr, prop.x - spr.width / 2, prop.y - spr.height / 2);
+          }
+        }
+
+        // 3. Draw Hazards (Toxic Miasma)
+        for (const hazard of this.hazards) {
+          hazard.draw(ctx);
+        }
+
+        // 4. Draw Drops
+        for (const drop of this.drops) {
+          drop.draw(ctx);
+        }
+
+        // 5. Draw Projectiles
+        for (const proj of this.projectiles) {
+          proj.draw(ctx);
+        }
+
+        // 6. Draw Enemies
+        for (const enemy of this.enemies) {
+          enemy.draw(ctx);
+        }
+
+        // 7. Draw Player
+        if (this.player) {
+          this.player.draw(ctx);
+        }
+
+        // 8. Draw Particles (Feathers, sparks)
+        for (const p of this.particles) {
+          p.draw(ctx);
+        }
+
+        // 9. Draw Floating Texts
+        for (const ft of this.floatingTexts) {
+          ft.draw(ctx);
+        }
+
+        // 10. Draw Custom Aim Crosshair
+        this.drawCrosshair(ctx);
+
+        ctx.restore();
+      }
+
+      drawArena(ctx) {
+        // Outer dark garden border
+        ctx.fillStyle = '#1c1611';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Stone boundary wall
+        ctx.fillStyle = '#473d31';
+        ctx.fillRect(ARENA.x - 10, ARENA.y - 10, ARENA.w + 20, ARENA.h + 20);
+        ctx.fillStyle = '#635343';
+        ctx.fillRect(ARENA.x - 6, ARENA.y - 6, ARENA.w + 12, ARENA.h + 12);
+
+        // Green Grass Field
+        ctx.fillStyle = '#314e27';
+        ctx.fillRect(ARENA.x, ARENA.y, ARENA.w, ARENA.h);
+
+        // Subtle grass pixel tufts pattern
+        ctx.fillStyle = '#3c5f30';
+        for (let gx = ARENA.x + 20; gx < ARENA.x + ARENA.w - 20; gx += 40) {
+          for (let gy = ARENA.y + 20; gy < ARENA.y + ARENA.h - 20; gy += 40) {
+            ctx.fillRect(gx + ((gy * 13) % 17), gy + ((gx * 7) % 19), 3, 2);
+            ctx.fillRect(gx + ((gy * 13) % 17) + 2, gy + ((gx * 7) % 19) - 1, 2, 3);
+          }
+        }
+      }
+
+      drawCrosshair(ctx) {
+        ctx.save();
+        ctx.translate(mouse.x, mouse.y);
+        ctx.strokeStyle = '#ffea79';
+        ctx.lineWidth = 2;
+
+        // Pixel reticle
+        ctx.strokeRect(-6, -6, 12, 12);
+        ctx.fillStyle = '#ea580c';
+        ctx.fillRect(-1, -1, 2, 2);
+        ctx.restore();
+      }
+
+      loop(timestamp) {
+        const dt = Math.min((timestamp - this.lastTime) / 1000, 0.1);
+        this.lastTime = timestamp;
+
+        this.update(dt);
+        this.draw();
+
+        requestAnimationFrame((t) => this.loop(t));
+      }
+    }
+
+    const game = new GameManager();
+    requestAnimationFrame((t) => game.loop(t));
+
+    // UI Buttons
+    document.getElementById('btn-start').addEventListener('click', () => {
+      sound.init();
+      game.startRun();
+    });
+
+    document.getElementById('btn-restart').addEventListener('click', () => {
+      sound.init();
+      game.startRun();
+    });
+
+    document.getElementById('btn-resume').addEventListener('click', () => {
+      game.togglePause();
+    });
+  </script>
+</body>
+</html>
